@@ -9,6 +9,10 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
+    public const ROLE_SUPER_ADMIN = 'super_admin';
+    public const ROLE_COMPANY_ADMIN = 'company_admin';
+    public const ROLE_COMPANY_VIEWER = 'company_viewer';
+
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
@@ -21,6 +25,11 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+    ];
+
+    protected $attributes = [
+        'role' => self::ROLE_COMPANY_VIEWER,
     ];
 
     /**

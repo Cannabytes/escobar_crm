@@ -2,7 +2,7 @@
 
 <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
   <div class="app-brand demo">
-    <a href="{{ route('admin.users.create') }}" class="app-brand-link">
+    <a href="{{ route('admin.users.index') }}" class="app-brand-link">
       <span class="app-brand-logo demo">
         <span class="text-primary">
           <svg width="32" height="22" viewBox="0 0 32 22" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -40,15 +40,31 @@
       <span class="menu-header-text">{{ __('Навигация') }}</span>
     </li>
 
-    <li class="menu-item {{ str_starts_with($currentRoute, 'admin.dashboard') ? 'active' : '' }}">
-      <a href="{{ route('admin.users.create') }}" class="menu-link">
+    <li class="menu-item {{ $currentRoute === 'admin.dashboard' ? 'active' : '' }}">
+      <a href="{{ route('admin.dashboard') }}" class="menu-link">
         <i class="menu-icon icon-base ti tabler-layout-dashboard"></i>
         <div>{{ __('Панель управления') }}</div>
       </a>
     </li>
 
     <li class="menu-header small text-uppercase">
+      <span class="menu-header-text">{{ __('Компании') }}</span>
+    </li>
+    <li class="menu-item {{ $currentRoute === 'admin.companies.create' ? 'active' : '' }}">
+      <a href="{{ route('admin.companies.create') }}" class="menu-link">
+        <i class="menu-icon icon-base ti tabler-building"></i>
+        <div>{{ __('Добавить компанию') }}</div>
+      </a>
+    </li>
+
+    <li class="menu-header small text-uppercase">
       <span class="menu-header-text">{{ __('Пользователи') }}</span>
+    </li>
+    <li class="menu-item {{ $currentRoute === 'admin.users.index' ? 'active' : '' }}">
+      <a href="{{ route('admin.users.index') }}" class="menu-link">
+        <i class="menu-icon icon-base ti tabler-users"></i>
+        <div>{{ __('Список пользователей') }}</div>
+      </a>
     </li>
     <li class="menu-item {{ $currentRoute === 'admin.users.create' ? 'active' : '' }}">
       <a href="{{ route('admin.users.create') }}" class="menu-link">

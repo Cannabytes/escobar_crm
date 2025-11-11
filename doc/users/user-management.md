@@ -6,6 +6,13 @@
 - **Ответственный контроллер:** `App\Http\Controllers\Admin\UserController@create`
 - **Шаблон:** `resources/views/admin/users/create.blade.php`
 
+## Список пользователей
+- **Маршрут:** `GET /admin/users`
+- **Описание:** таблица с поиском и фильтрами по роли для просмотра всех учетных записей пользователей.
+- **Ответственный контроллер:** `App\Http\Controllers\Admin\UserController@index`
+- **Шаблон:** `resources/views/admin/users/index.blade.php`
+- **Особенности:** поддерживает фильтрацию по имени/email и роли, пагинация с шагом 15 записей, быстрый переход к созданию нового пользователя.
+
 ## Процесс создания пользователя
 1. Супер админ заполняет форму: имя, email, роль, пароль и подтверждение пароля.
 2. Данные валидируются на клиенте (FormValidation) и сервере (`App\Http\Requests\Admin\StoreUserRequest`).

@@ -13,6 +13,8 @@ class CompanyBankAccountController extends Controller
 {
     public function store(Request $request, Company $company): RedirectResponse
     {
+        $this->authorize('update', $company);
+
         $validated = $request->validate([
             'bank_name' => 'required|string|max:191',
             'country' => 'required|string|max:100',
@@ -37,6 +39,14 @@ class CompanyBankAccountController extends Controller
 
     public function update(Request $request, Company $company, CompanyBankAccount $bankAccount): RedirectResponse
     {
+        $this->authorize('update', $company);
+
+        if ($bankAccount->company_id !== $company->id) {
+            return redirect()
+                ->route('admin.companies.show', $company)
+                ->with('error', __('Банковский счет не найден.'));
+        }
+
         $validated = $request->validate([
             'bank_name' => 'required|string|max:191',
             'country' => 'required|string|max:100',
@@ -56,6 +66,14 @@ class CompanyBankAccountController extends Controller
 
     public function destroy(Company $company, CompanyBankAccount $bankAccount): RedirectResponse
     {
+        $this->authorize('update', $company);
+
+        if ($bankAccount->company_id !== $company->id) {
+            return redirect()
+                ->route('admin.companies.show', $company)
+                ->with('error', __('Банковский счет не найден.'));
+        }
+
         $bankAccount->delete();
 
         return redirect()

@@ -8,7 +8,14 @@ class StoreCompanyRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $user = $this->user();
+        $company = $this->route('company');
+
+        if ($company) {
+            return $user?->can('update', $company) ?? false;
+        }
+
+        return $user?->can('create', \App\Models\Company::class) ?? false;
     }
 
     protected function prepareForValidation(): void

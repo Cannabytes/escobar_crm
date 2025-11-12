@@ -19,7 +19,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="{{ url('public/vendor/vuexy/vendor/fonts/iconify-icons.css') }}">
-
+    
     <!-- Core CSS -->
     <link rel="stylesheet" href="{{ url('public/vendor/vuexy/vendor/libs/node-waves/node-waves.css') }}">
     <link rel="stylesheet" href="{{ url('public/vendor/vuexy/vendor/libs/pickr/pickr-themes.css') }}">

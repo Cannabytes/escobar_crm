@@ -8,7 +8,9 @@ class UpdateCompanyLicenseRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $company = $this->route('company');
+
+        return $this->user()?->can('update', $company) ?? false;
     }
 
     public function rules(): array

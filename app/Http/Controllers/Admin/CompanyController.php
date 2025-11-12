@@ -15,6 +15,11 @@ use Illuminate\View\View;
 
 class CompanyController extends Controller
 {
+    public function __construct()
+    {
+        $this->authorizeResource(Company::class, 'company');
+    }
+
     public function index(): View
     {
         $companies = Company::with(['moderator'])
@@ -26,6 +31,8 @@ class CompanyController extends Controller
 
     public function create(): View
     {
+        $this->authorize('create', Company::class);
+
         // Модератором может быть любой пользователь
         $moderators = User::orderBy('name')->get();
 
@@ -57,7 +64,13 @@ class CompanyController extends Controller
 
     public function show(Company $company): View
     {
-        $company->load(['moderator', 'bankAccounts', 'credentials', 'accessUsers']);
+        $company->load([
+            'moderator',
+            'bankAccounts',
+            'banks' => fn($query) => $query->with('details'),
+            'credentials',
+            'accessUsers',
+        ]);
 
         return view('admin.companies.show', compact('company'));
     }
@@ -67,7 +80,13 @@ class CompanyController extends Controller
         // Модератором может быть любой пользователь
         $moderators = User::orderBy('name')->get();
 
-        $company->load(['moderator', 'bankAccounts', 'credentials', 'accessUsers']);
+        $company->load([
+            'moderator',
+            'bankAccounts',
+            'banks' => fn($query) => $query->with('details'),
+            'credentials',
+            'accessUsers',
+        ]);
 
         return view('admin.companies.edit', compact('company', 'moderators'));
     }
@@ -102,6 +121,8 @@ class CompanyController extends Controller
 
     public function updateLicense(UpdateCompanyLicenseRequest $request, Company $company): RedirectResponse
     {
+        $this->authorize('update', $company);
+
         $company->update($request->validated());
 
         return redirect()

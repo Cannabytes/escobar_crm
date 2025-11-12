@@ -13,6 +13,8 @@ class CompanyCredentialController extends Controller
 {
     public function store(Request $request, Company $company): RedirectResponse
     {
+        $this->authorize('update', $company);
+
         $validated = $request->validate([
             'login' => 'nullable|string|max:191',
             'login_id' => 'nullable|string|max:191',
@@ -40,6 +42,8 @@ class CompanyCredentialController extends Controller
 
     public function update(Request $request, Company $company): RedirectResponse
     {
+        $this->authorize('update', $company);
+
         return $this->store($request, $company);
     }
 }

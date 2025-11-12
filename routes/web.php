@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Admin\CompanyAccessController;
 use App\Http\Controllers\Admin\CompanyBankAccountController;
+use App\Http\Controllers\Admin\CompanyBankController;
+use App\Http\Controllers\Admin\CompanyBankDetailController;
 use App\Http\Controllers\Admin\CompanyController;
 use App\Http\Controllers\Admin\CompanyCredentialController;
 use App\Http\Controllers\Admin\RoleController;
@@ -53,13 +55,29 @@ Route::prefix('admin')->name('admin.')->middleware(['ensure.installed', 'auth'])
     // Компании
     Route::resource('companies', CompanyController::class);
 
-    // Банковские счета компании
+    // Банковские счета компании (старая структура)
     Route::post('companies/{company}/bank-accounts', [CompanyBankAccountController::class, 'store'])
         ->name('companies.bank-accounts.store');
     Route::put('companies/{company}/bank-accounts/{bankAccount}', [CompanyBankAccountController::class, 'update'])
         ->name('companies.bank-accounts.update');
     Route::delete('companies/{company}/bank-accounts/{bankAccount}', [CompanyBankAccountController::class, 'destroy'])
         ->name('companies.bank-accounts.destroy');
+
+    // Банки компании (новая структура)
+    Route::post('companies/{company}/banks', [CompanyBankController::class, 'store'])
+        ->name('companies.banks.store');
+    Route::put('companies/{company}/banks/{bank}', [CompanyBankController::class, 'update'])
+        ->name('companies.banks.update');
+    Route::delete('companies/{company}/banks/{bank}', [CompanyBankController::class, 'destroy'])
+        ->name('companies.banks.destroy');
+
+    // Реквізити банків компании
+    Route::post('companies/{company}/banks/{bank}/details', [CompanyBankDetailController::class, 'store'])
+        ->name('companies.bank-details.store');
+    Route::put('companies/{company}/bank-details/{detail}', [CompanyBankDetailController::class, 'update'])
+        ->name('companies.bank-details.update');
+    Route::delete('companies/{company}/bank-details/{detail}', [CompanyBankDetailController::class, 'destroy'])
+        ->name('companies.bank-details.destroy');
 
     // Учетные данные компании
     Route::post('companies/{company}/credentials', [CompanyCredentialController::class, 'store'])

@@ -2,6 +2,10 @@
   $currentRoute = request()->route() ? request()->route()->getName() : null;
   $routeCompany = request()->route('company');
   $currentCompanyId = $routeCompany instanceof \App\Models\Company ? $routeCompany->getKey() : null;
+  $userSidebarCompanies = $sidebarUserCompanies ?? collect();
+  $isCompaniesListActive = $currentRoute === 'admin.companies.index'
+    || (in_array($currentRoute, ['admin.companies.show', 'admin.companies.edit'], true)
+      && ! $userSidebarCompanies->contains(fn ($company) => $company->getKey() === $currentCompanyId));
 @endphp
 
 <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
@@ -56,7 +60,7 @@
       <span class="menu-header-text">{{ __('Компании') }}</span>
     </li>
     
-    <li class="menu-item {{ in_array($currentRoute, ['admin.companies.index', 'admin.companies.show', 'admin.companies.edit']) ? 'active' : '' }}">
+    <li class="menu-item {{ $isCompaniesListActive ? 'active' : '' }}">
       <a href="{{ route('admin.companies.index') }}" class="menu-link">
         <i class="menu-icon icon-base ti tabler-building"></i>
         <div>{{ __('Список компаний') }}</div>
@@ -77,7 +81,7 @@
       <span class="menu-header-text">{{ __('Мои компании') }}</span>
     </li>
 
-    @forelse($sidebarUserCompanies ?? collect() as $sidebarCompany)
+    @forelse($userSidebarCompanies as $sidebarCompany)
       @php
         $isMyCompanyActive = in_array($currentRoute, ['admin.companies.show', 'admin.companies.edit'], true)
           && $currentCompanyId === $sidebarCompany->getKey();

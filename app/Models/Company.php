@@ -43,10 +43,16 @@ class Company extends Model
         return $this->belongsTo(User::class, 'moderator_id');
     }
 
-    // Банковские реквизиты
+    // Банковские реквизиты (старая структура)
     public function bankAccounts(): HasMany
     {
         return $this->hasMany(CompanyBankAccount::class)->orderBy('sort_order');
+    }
+
+    // Банки (новая структура)
+    public function banks(): HasMany
+    {
+        return $this->hasMany(Bank::class)->orderBy('sort_order');
     }
 
     // Логины и пароли
@@ -76,25 +82,12 @@ class Company extends Model
             return true;
         }
 
-        // Проверяем специальный доступ
-        $access = $this->accessUsers()->where('user_id', $user->id)->first();
-        return $access && $access->pivot->access_type === 'edit';
+        return false;
     }
 
     public function canUserView(User $user): bool
     {
-        // Супер админ может всё
-        if ($user->role === User::ROLE_SUPER_ADMIN) {
-            return true;
-        }
-
-        // Модератор компании может просматривать
-        if ($this->moderator_id === $user->id) {
-            return true;
-        }
-
-        // Проверяем специальный доступ (view или edit)
-        return $this->accessUsers()->where('user_id', $user->id)->exists();
+        return true;
     }
 
     public function canUserViewCredentials(User $user): bool
@@ -109,9 +102,7 @@ class Company extends Model
             return true;
         }
 
-        // Проверяем, есть ли у пользователя право редактирования
-        $access = $this->accessUsers()->where('user_id', $user->id)->first();
-        return $access && $access->pivot->access_type === 'edit';
+        return false;
     }
 
     public function hasLicenseDetails(): bool

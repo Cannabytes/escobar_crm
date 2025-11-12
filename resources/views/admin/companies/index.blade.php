@@ -62,16 +62,40 @@
                     <span class="badge bg-label-secondary">{{ $company->country }}</span>
                   </td>
                   <td>
-                    @if ($company->moderator)
-                      <div class="d-flex align-items-center">
-                        <div class="avatar avatar-xs me-2">
-                          <img
-                            src="{{ $company->moderator->avatar_url }}"
-                            alt="{{ $company->moderator->name }}"
-                            class="rounded-circle"
-                          >
-                        </div>
-                        {{ $company->moderator->name }}
+                    @if ($company->moderator || $company->accessUsers->count() > 0)
+                      <div>
+                        @if ($company->moderator)
+                          <div class="d-flex align-items-center mb-1">
+                            <div class="avatar avatar-xs me-2">
+                              <img
+                                src="{{ $company->moderator->avatar_url }}"
+                                alt="{{ $company->moderator->name }}"
+                                class="rounded-circle"
+                              >
+                            </div>
+                            <strong>{{ $company->moderator->name }}</strong>
+                            <small class="text-muted ms-1">({{ __('Главный') }})</small>
+                          </div>
+                        @endif
+                        @if ($company->accessUsers->count() > 0)
+                          @foreach ($company->accessUsers as $user)
+                            <div class="d-flex align-items-center mb-1">
+                              <div class="avatar avatar-xs me-2">
+                                <img
+                                  src="{{ $user->avatar_url }}"
+                                  alt="{{ $user->name }}"
+                                  class="rounded-circle"
+                                >
+                              </div>
+                              {{ $user->name }}
+                              @if($user->pivot->access_type === 'edit')
+                                <small class="text-muted ms-1">({{ __('Редактирование') }})</small>
+                              @else
+                                <small class="text-muted ms-1">({{ __('Просмотр') }})</small>
+                              @endif
+                            </div>
+                          @endforeach
+                        @endif
                       </div>
                     @else
                       <span class="text-muted">—</span>

@@ -20,9 +20,46 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       if (typeof $ !== 'undefined' && $.fn.select2) {
-        $('.select2').select2({
+        // Инициализация Select2 для модального окна
+        $('#addAccessModal').on('shown.bs.modal', function() {
+          const $select = $('#addAccessModal .select2');
+          if (!$select.hasClass('select2-hidden-accessible')) {
+            $select.select2({
+              placeholder: '{{ __('Выберите модератора') }}',
+              dropdownParent: $('#addAccessModal'),
+              width: '100%',
+              language: {
+                noResults: function() {
+                  return '{{ __('Модераторы не найдены') }}';
+                }
+              }
+            });
+          }
+        });
+        
+        // Очистка Select2 при закрытии модального окна
+        $('#addAccessModal').on('hidden.bs.modal', function() {
+          const $select = $('#addAccessModal .select2');
+          if ($select.hasClass('select2-hidden-accessible')) {
+            $select.val('').trigger('change');
+          }
+        });
+        
+        // Инициализация Select2 для других элементов (если есть)
+        $('.select2').not('#addAccessModal .select2').select2({
           placeholder: '{{ __('Выберите из списка') }}',
-          dropdownParent: $('#addAccessModal')
+          width: '100%'
+        });
+      }
+      
+      // Отладка модального окна
+      const addAccessModal = document.getElementById('addAccessModal');
+      if (addAccessModal) {
+        addAccessModal.addEventListener('show.bs.modal', function() {
+          console.log('Modal is opening...');
+        });
+        addAccessModal.addEventListener('shown.bs.modal', function() {
+          console.log('Modal is fully shown');
         });
       }
     });
@@ -162,8 +199,15 @@
               <dt class="col-sm-5 text-muted">{{ __('Страна:') }}</dt>
               <dd class="col-sm-7"><span class="badge bg-label-secondary">{{ $company->country }}</span></dd>
               
-              <dt class="col-sm-5 text-muted">{{ __('Модератор:') }}</dt>
+              <dt class="col-sm-5 text-muted">{{ __('Главный модератор:') }}</dt>
               <dd class="col-sm-7">{{ $company->moderator->name ?? '—' }}</dd>
+              
+              @if($company->accessUsers->count() > 0)
+                <dt class="col-sm-5 text-muted">{{ __('Доп. модераторы:') }}</dt>
+                <dd class="col-sm-7">
+                  <span class="badge bg-label-info">{{ $company->accessUsers->count() }}</span>
+                </dd>
+              @endif
               
               <dt class="col-sm-5 text-muted">{{ __('Создана:') }}</dt>
               <dd class="col-sm-7">{{ $company->created_at->format('d.m.Y H:i') }}</dd>
@@ -348,8 +392,10 @@
                           <table class="table table-sm table-hover mb-0">
                             <thead class="table-light">
                               <tr>
-                                <th>{{ __('Тип') }}</th>
                                 <th>{{ __('Валюта') }}</th>
+                                <th>{{ __('ACCOUNT NUMBER') }}</th>
+                                <th>{{ __('IBAN') }}</th>
+                                <th>{{ __('SWIFT') }}</th>
                                 <th>{{ __('Статус') }}</th>
                                 @if($canEditCompany)
                                   <th class="text-end">{{ __('Действия') }}</th>
@@ -359,12 +405,10 @@
                             <tbody>
                               @foreach ($bank->details as $detail)
                                 <tr>
-                                  <td>
-                                    <span class="badge bg-label-info">
-                                      {{ BankDetail::getTypes()[$detail->detail_type] ?? $detail->detail_type }}
-                                    </span>
-                                  </td>
                                   <td>{{ $detail->currency ?? '—' }}</td>
+                                  <td>{{ $detail->account_number ?? '—' }}</td>
+                                  <td>{{ $detail->iban ?? '—' }}</td>
+                                  <td>{{ $detail->swift ?? '—' }}</td>
                                   <td>
                                     @php
                                       $statusColors = [
@@ -474,16 +518,6 @@
                             </div>
                             <div class="modal-body">
                               <div class="mb-3">
-                                <label class="form-label required">{{ __('Тип реквизита') }}</label>
-                                <select class="form-select" name="detail_type" required>
-                                  <option value="">{{ __('Выберите тип') }}</option>
-                                  @foreach (BankDetail::getTypes() as $key => $label)
-                                    <option value="{{ $key }}">{{ $label }}</option>
-                                  @endforeach
-                                </select>
-                              </div>
-
-                              <div class="mb-3">
                                 <label class="form-label">{{ __('Валюта') }}</label>
                                 <select class="form-select" name="currency">
                                   <option value="">— {{ __('Не указано') }} —</option>
@@ -502,6 +536,27 @@
                                     <option value="{{ $key }}" {{ $key === 'active' ? 'selected' : '' }}>{{ $label }}</option>
                                   @endforeach
                                 </select>
+                              </div>
+
+                              <div class="mb-3">
+                                <label class="form-label">{{ __('ACCOUNT NUMBER') }}</label>
+                                <input type="text" class="form-control" name="account_number" 
+                                       value="{{ old('account_number') }}" 
+                                       placeholder="{{ __('Введите номер счета') }}">
+                              </div>
+
+                              <div class="mb-3">
+                                <label class="form-label">{{ __('IBAN') }}</label>
+                                <input type="text" class="form-control" name="iban" 
+                                       value="{{ old('iban') }}" 
+                                       placeholder="{{ __('Введите IBAN') }}">
+                              </div>
+
+                              <div class="mb-3">
+                                <label class="form-label">{{ __('SWIFT') }}</label>
+                                <input type="text" class="form-control" name="swift" 
+                                       value="{{ old('swift') }}" 
+                                       placeholder="{{ __('Введите SWIFT код') }}">
                               </div>
                             </div>
                             <div class="modal-footer">
@@ -534,17 +589,6 @@
                             </div>
                             <div class="modal-body">
                               <div class="mb-3">
-                                <label class="form-label required">{{ __('Тип реквизита') }}</label>
-                                <select class="form-select" name="detail_type" required>
-                                  @foreach (BankDetail::getTypes() as $key => $label)
-                                    <option value="{{ $key }}" {{ $detail->detail_type === $key ? 'selected' : '' }}>
-                                      {{ $label }}
-                                    </option>
-                                  @endforeach
-                                </select>
-                              </div>
-
-                              <div class="mb-3">
                                 <label class="form-label">{{ __('Валюта') }}</label>
                                 <select class="form-select" name="currency">
                                   <option value="">— {{ __('Не указано') }} —</option>
@@ -563,6 +607,27 @@
                                     <option value="{{ $key }}" {{ $detail->status === $key ? 'selected' : '' }}>{{ $label }}</option>
                                   @endforeach
                                 </select>
+                              </div>
+
+                              <div class="mb-3">
+                                <label class="form-label">{{ __('ACCOUNT NUMBER') }}</label>
+                                <input type="text" class="form-control" name="account_number" 
+                                       value="{{ old('account_number', $detail->account_number) }}" 
+                                       placeholder="{{ __('Введите номер счета') }}">
+                              </div>
+
+                              <div class="mb-3">
+                                <label class="form-label">{{ __('IBAN') }}</label>
+                                <input type="text" class="form-control" name="iban" 
+                                       value="{{ old('iban', $detail->iban) }}" 
+                                       placeholder="{{ __('Введите IBAN') }}">
+                              </div>
+
+                              <div class="mb-3">
+                                <label class="form-label">{{ __('SWIFT') }}</label>
+                                <input type="text" class="form-control" name="swift" 
+                                       value="{{ old('swift', $detail->swift) }}" 
+                                       placeholder="{{ __('Введите SWIFT код') }}">
                               </div>
                             </div>
                             <div class="modal-footer">
@@ -588,65 +653,103 @@
               @endforelse
             </div>
 
-            <!-- Вкладка: Доступ пользователей -->
+            <!-- Вкладка: Доступ модераторов -->
             <div class="tab-pane fade" id="access-tab" role="tabpanel">
+              <div class="alert alert-info mb-3">
+                <i class="icon-base ti tabler-info-circle me-1"></i>
+                {{ __('В этом разделе супер-администратор может добавлять модераторов, которые смогут изменять данные компании') }}
+              </div>
               <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="mb-0">{{ __('Пользователи с доступом') }}</h6>
+                <h6 class="mb-0">{{ __('Модераторы с доступом') }} ({{ $company->accessUsers->count() }})</h6>
                 @if($canEditCompany)
                   <button type="button" class="btn btn-sm btn-primary" 
                           data-bs-toggle="modal" data-bs-target="#addAccessModal">
-                    <i class="icon-base ti tabler-plus me-1"></i> {{ __('Добавить доступ') }}
+                    <i class="icon-base ti tabler-plus me-1"></i> {{ __('Добавить модератора') }}
                   </button>
                 @endif
               </div>
 
-              <div class="table-responsive">
-                <table class="table">
-                  <thead>
-                    <tr>
-                      <th>{{ __('Пользователь') }}</th>
-                      <th>{{ __('Email') }}</th>
-                      <th>{{ __('Тип доступа') }}</th>
-                      @if($canEditCompany)
-                        <th class="text-end">{{ __('Действия') }}</th>
-                      @endif
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @forelse ($company->accessUsers as $user)
+              @if($company->accessUsers->count() > 0)
+                <div class="table-responsive">
+                  <table class="table table-hover">
+                    <thead class="table-light">
                       <tr>
-                        <td>{{ $user->name }}</td>
-                        <td>{{ $user->email }}</td>
-                        <td>
-                          @if ($user->pivot->access_type === 'edit')
-                            <span class="badge bg-label-success">{{ __('Редактирование') }}</span>
-                          @else
-                            <span class="badge bg-label-info">{{ __('Просмотр') }}</span>
-                          @endif
-                        </td>
+                        <th>{{ __('Модератор') }}</th>
+                        <th>{{ __('Email') }}</th>
+                        <th>{{ __('Тип доступа') }}</th>
+                        <th>{{ __('Добавлен') }}</th>
                         @if($canEditCompany)
-                          <td class="text-end">
-                            <form action="{{ route('admin.companies.access.destroy', [$company, $user->pivot->id]) }}" 
-                                  method="POST" class="d-inline" onsubmit="return confirm('{{ __('Удалить доступ?') }}')">
-                              @csrf
-                              @method('DELETE')
-                              <button type="submit" class="btn btn-sm btn-icon btn-label-danger">
-                                <i class="icon-base ti tabler-trash"></i>
-                              </button>
-                            </form>
-                          </td>
+                          <th class="text-end">{{ __('Действия') }}</th>
                         @endif
                       </tr>
-                    @empty
-                      <tr>
-                        <td colspan="{{ $canEditCompany ? 4 : 3 }}" class="text-center text-muted py-4">
-                          {{ __('Дополнительный доступ не настроен') }}
-                        </td>
-                      </tr>
-                    @endforelse
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      @foreach ($company->accessUsers as $user)
+                        <tr>
+                          <td>
+                            <div class="d-flex align-items-center">
+                              @if ($user->avatar)
+                                <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" 
+                                     class="rounded-circle me-2" style="width: 32px; height: 32px; object-fit: cover;">
+                              @else
+                                <div class="avatar-initial rounded-circle bg-label-primary me-2" 
+                                     style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 14px;">
+                                  {{ strtoupper(substr($user->name, 0, 1)) }}
+                                </div>
+                              @endif
+                              <div>
+                                <strong>{{ $user->name }}</strong>
+                                @if($user->id === auth()->id())
+                                  <span class="badge bg-label-info ms-1">{{ __('Вы') }}</span>
+                                @endif
+                              </div>
+                            </div>
+                          </td>
+                          <td>{{ $user->email }}</td>
+                          <td>
+                            @if($user->pivot->access_type === 'edit')
+                              <span class="badge bg-label-success">
+                                <i class="icon-base ti tabler-pencil me-1"></i>{{ __('Полный доступ') }}
+                              </span>
+                            @else
+                              <span class="badge bg-label-info">
+                                <i class="icon-base ti tabler-eye me-1"></i>{{ __('Только просмотр') }}
+                              </span>
+                            @endif
+                          </td>
+                          <td>
+                            <small class="text-muted">{{ $user->pivot->created_at?->format('d.m.Y H:i') ?? '—' }}</small>
+                          </td>
+                          @if($canEditCompany)
+                            <td class="text-end">
+                              <form action="{{ route('admin.companies.access.destroy', [$company, $user->pivot->id]) }}" 
+                                    method="POST" class="d-inline" onsubmit="return confirm('{{ __('Удалить доступ модератора?') }}')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-icon btn-label-danger" title="{{ __('Удалить доступ') }}">
+                                  <i class="icon-base ti tabler-trash"></i>
+                                </button>
+                              </form>
+                            </td>
+                          @endif
+                        </tr>
+                      @endforeach
+                    </tbody>
+                  </table>
+                </div>
+              @else
+                <div class="text-center py-6">
+                  <i class="icon-base ti tabler-users-off" style="font-size: 64px; color: #ccc;"></i>
+                  <p class="mt-3 text-muted">{{ __('Дополнительные модераторы не добавлены') }}</p>
+                  <p class="small text-muted mb-3">{{ __('Нажмите кнопку выше, чтобы добавить модератора с доступом к компании') }}</p>
+                  @if($canEditCompany)
+                    <button type="button" class="btn btn-primary" 
+                            data-bs-toggle="modal" data-bs-target="#addAccessModal">
+                      <i class="icon-base ti tabler-plus me-1"></i> {{ __('Добавить первого модератора') }}
+                    </button>
+                  @endif
+                </div>
+              @endif
             </div>
           </div>
         </div>
@@ -950,48 +1053,58 @@
 
 @if($canEditCompany)
 <!-- Modal: Добавить доступ -->
-<div class="modal fade" id="addAccessModal" tabindex="-1">
-  <div class="modal-dialog">
+<div class="modal fade" id="addAccessModal" tabindex="-1" aria-labelledby="addAccessModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <form action="{{ route('admin.companies.access.store', $company) }}" method="POST">
         @csrf
         <div class="modal-header">
-          <h5 class="modal-title">{{ __('Добавить доступ пользователю') }}</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-  </div>
-</div>
-@endif
+          <h5 class="modal-title" id="addAccessModalLabel">{{ __('Добавить модератора') }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
         <div class="modal-body">
+          <div class="alert alert-info mb-3">
+            <i class="icon-base ti tabler-info-circle me-1"></i>
+            {{ __('Пользователи с доступом смогут редактировать данные компании') }}
+          </div>
           <div class="mb-3">
             <label class="form-label required">{{ __('Пользователь') }}</label>
             <select class="form-select select2" name="user_id" required>
               <option value="">{{ __('Выберите пользователя') }}</option>
               @php
-                $users = \App\Models\User::whereNotIn('id', $company->accessUsers->pluck('id'))
-                  ->where('id', '!=', $company->moderator_id)
+                // Получаем всех пользователей, кроме тех, кто уже имеет доступ к компании
+                $availableUsers = \App\Models\User::whereNotIn('id', $company->accessUsers->pluck('id'))
+                  ->where('id', '!=', $company->moderator_id) // Исключаем главного модератора
                   ->orderBy('name')
                   ->get();
               @endphp
-              @foreach ($users as $user)
-                <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->email }})</option>
-              @endforeach
+              @forelse ($availableUsers as $user)
+                <option value="{{ $user->id }}">
+                  {{ $user->name }} ({{ $user->email }})
+                  @if($user->role === \App\Models\User::ROLE_SUPER_ADMIN)
+                    - {{ __('Супер-админ') }}
+                  @elseif($user->role === \App\Models\User::ROLE_MODERATOR)
+                    - {{ __('Модератор') }}
+                  @elseif($user->role === \App\Models\User::ROLE_VIEWER)
+                    - {{ __('Пользователь') }}
+                  @endif
+                </option>
+              @empty
+                <option value="" disabled>{{ __('Нет доступных пользователей для добавления') }}</option>
+              @endforelse
             </select>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label required">{{ __('Тип доступа') }}</label>
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="access_type" value="view" id="access_view" checked>
-              <label class="form-check-label" for="access_view">
-                {{ __('Просмотр') }} — <small class="text-muted">{{ __('только реквизиты, без логинов/паролей') }}</small>
-              </label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="access_type" value="edit" id="access_edit">
-              <label class="form-check-label" for="access_edit">
-                {{ __('Редактирование') }} — <small class="text-muted">{{ __('полный доступ ко всем данным') }}</small>
-              </label>
-            </div>
+            <input type="hidden" name="access_type" value="edit">
+            <small class="text-muted d-block mt-2">
+              {{ __('Выберите пользователя, который сможет изменять данные компании') }}
+            </small>
+            @if($availableUsers->isEmpty())
+              <div class="alert alert-warning mt-2 mb-0">
+                <small>
+                  <i class="icon-base ti tabler-info-circle me-1"></i>
+                  {{ __('Все доступные пользователи уже имеют доступ к этой компании') }}
+                </small>
+              </div>
+            @endif
           </div>
         </div>
         <div class="modal-footer">
@@ -1005,6 +1118,8 @@
       </form>
     </div>
   </div>
+</div>
+@endif
 
 @php
   $shouldOpenLicenseModal = (old('form_type') === 'license' && $errors->any()) || request()->boolean('open_license');
@@ -1037,6 +1152,41 @@
   
   .cursor-pointer:hover {
     background-color: rgba(0, 0, 0, 0.02);
+  }
+  
+  /* Исправление отображения модального окна */
+  #addAccessModal .modal-dialog {
+    z-index: 1055;
+  }
+  
+  #addAccessModal .modal-content {
+    background-color: #fff !important;
+    opacity: 1 !important;
+  }
+  
+  #addAccessModal .modal-header,
+  #addAccessModal .modal-body,
+  #addAccessModal .modal-footer {
+    opacity: 1 !important;
+    visibility: visible !important;
+    background-color: transparent;
+  }
+  
+  #addAccessModal .modal-body {
+    padding: 1.5rem;
+  }
+  
+  /* Исправление z-index для Select2 в модальном окне */
+  .select2-container {
+    z-index: 9999;
+  }
+  
+  .select2-dropdown {
+    z-index: 10000;
+  }
+  
+  .select2-container--open {
+    z-index: 10001;
   }
 </style>
 @endsection

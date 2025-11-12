@@ -65,7 +65,7 @@ class Company extends Model
     public function accessUsers(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'company_user_access')
-            ->withPivot('access_type')
+            ->withPivot('id', 'access_type')
             ->withTimestamps();
     }
 
@@ -82,7 +82,13 @@ class Company extends Model
             return true;
         }
 
-        return false;
+        // Проверяем дополнительных модераторов с доступом
+        $hasAccess = $this->accessUsers()
+            ->where('user_id', $user->id)
+            ->where('access_type', 'edit')
+            ->exists();
+
+        return $hasAccess;
     }
 
     public function canUserView(User $user): bool
@@ -102,7 +108,13 @@ class Company extends Model
             return true;
         }
 
-        return false;
+        // Проверяем дополнительных модераторов с доступом к редактированию
+        $hasAccess = $this->accessUsers()
+            ->where('user_id', $user->id)
+            ->where('access_type', 'edit')
+            ->exists();
+
+        return $hasAccess;
     }
 
     public function hasLicenseDetails(): bool

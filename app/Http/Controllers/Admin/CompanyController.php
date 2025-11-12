@@ -22,7 +22,7 @@ class CompanyController extends Controller
 
     public function index(): View
     {
-        $companies = Company::with(['moderator'])
+        $companies = Company::with(['moderator', 'accessUsers'])
             ->latest()
             ->paginate(20);
 

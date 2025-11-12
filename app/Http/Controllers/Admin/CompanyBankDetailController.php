@@ -26,7 +26,9 @@ class CompanyBankDetailController extends Controller
         }
 
         $validated = $request->validate([
-            'detail_type' => 'required|string|in:account_number,iban,swift',
+            'account_number' => 'nullable|string|max:100',
+            'iban' => 'nullable|string|max:50',
+            'swift' => 'nullable|string|max:20',
             'currency' => 'nullable|string|max:10',
             'status' => 'nullable|string|in:active,inactive,hold,closed',
         ]);
@@ -34,7 +36,8 @@ class CompanyBankDetailController extends Controller
         $validated['bank_id'] = $bank->id;
         $validated['sort_order'] = BankDetail::where('bank_id', $bank->id)->max('sort_order') + 1;
         // Set default values for removed fields
-        $validated['detail_key'] = $validated['detail_type'];
+        $validated['detail_type'] = 'account_number'; // Значение по умолчанию
+        $validated['detail_key'] = 'account_number';
         $validated['detail_value'] = '';
         $validated['is_primary'] = false;
         $validated['notes'] = null;
@@ -62,12 +65,15 @@ class CompanyBankDetailController extends Controller
         }
 
         $validated = $request->validate([
-            'detail_type' => 'required|string|in:account_number,iban,swift',
+            'account_number' => 'nullable|string|max:100',
+            'iban' => 'nullable|string|max:50',
+            'swift' => 'nullable|string|max:20',
             'currency' => 'nullable|string|max:10',
             'status' => 'nullable|string|in:active,inactive,hold,closed',
         ]);
 
         // Keep existing values for removed fields
+        $validated['detail_type'] = $detail->detail_type; // Сохраняем существующее значение
         $validated['detail_key'] = $detail->detail_key;
         $validated['detail_value'] = $detail->detail_value;
         $validated['is_primary'] = $detail->is_primary;

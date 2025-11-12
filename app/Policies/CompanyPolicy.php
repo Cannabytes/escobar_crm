@@ -31,7 +31,7 @@ class CompanyPolicy
             return true;
         }
 
-        return (int) $company->moderator_id === (int) $user->id;
+        return $company->canUserEdit($user);
     }
 
     public function delete(User $user, Company $company): bool

@@ -13,10 +13,14 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'ensure.installed' => \App\Http\Middleware\EnsureSystemInstalled::class,
+            'permission' => \App\Http\Middleware\CheckPermission::class,
+            'permission.all' => \App\Http\Middleware\CheckAllPermissions::class,
+            'set.locale' => \App\Http\Middleware\SetLocale::class,
         ]);
         
         // Добавляем middleware для логирования активности пользователей
         $middleware->append(\App\Http\Middleware\LogUserActivity::class);
+        $middleware->appendToGroup('web', \App\Http\Middleware\SetLocale::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

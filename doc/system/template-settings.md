@@ -113,25 +113,22 @@ $config = $settings->toTemplateConfig();
 // ['theme' => 'dark', 'style' => 'light', ...]
 ```
 
-## Контроллер SettingsController
+## Интерфейс настроек
 
-**Маршруты:**
-- `GET /admin/settings` - страница настроек
-- `PUT /admin/settings` - сохранение настроек
-- `POST /admin/settings/reset` - сброс к значениям по умолчанию
+Отдельная страница `/admin/settings` удалена. Настройки открываются через модальное окно в верхнем меню. Модал загружает текущие значения, позволяет изменять их в несколько кликов и отправляет изменения через AJAX в бекенд.
 
-### Валидация
+### Поток сохранения
 
-```php
-'theme' => 'required|in:light,dark,system'
-'style' => 'required|in:light,dark,bordered'
-'layout_type' => 'required|in:vertical,horizontal'
-'navbar_type' => 'required|in:fixed,static,hidden'
-'footer_type' => 'required|in:fixed,static,hidden'
-'layout_navbar_fixed' => 'boolean'
-'show_dropdown_on_hover' => 'boolean'
-'language' => 'required|in:en,ru'
-```
+1. Пользователь открывает модал.
+2. Текущая конфигурация подтягивается из `UserSettings`.
+3. При сохранении отправляется POST/PUT-запрос на endpoint `admin/template-settings` (AJAX).
+4. Ответ возвращает обновлённую конфигурацию, которая сразу применяется на фронтенде.
+
+### Сброс настроек
+
+- Отдельная кнопка в модале.
+- Выполняет POST-запрос на `admin/template-settings/reset`.
+- После сброса UI автоматически обновляется.
 
 ## Применение настроек
 
@@ -220,9 +217,9 @@ protected $fillable = [
 
 ## Доступ
 
-- Страница доступна всем аутентифицированным пользователям
-- Каждый пользователь может настраивать только свои параметры
-- Ссылка доступна в выпадающем меню навбара
+- Настройки доступны всем аутентифицированным пользователям
+- Каждый пользователь управляет только своими параметрами
+- В верхнем меню отображается кнопка открытия модального окна
 
 ## Интеграция с Template Customizer
 

@@ -31,6 +31,12 @@ class AppServiceProvider extends ServiceProvider
             return Password::min(6);
         });
 
+        View::share('supportedLocales', config('app.supported_locales', []));
+
+        View::composer('*', function ($view): void {
+            $view->with('currentLocale', app()->getLocale());
+        });
+
         
         View::composer('partials.admin.sidebar', function ($view) {
             $user = Auth::user();

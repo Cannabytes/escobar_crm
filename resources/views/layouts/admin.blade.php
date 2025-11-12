@@ -64,7 +64,7 @@
                 <div class="mb-2 mb-md-0">
                   © {{ now()->year }}
                   <span class="fw-semibold">{{ config('app.name', 'Laravel') }}</span>
-                  — Панель администрирования компаний
+                  — {{ __('Панель администрирования компаний') }}
                 </div>
                 <div>
                   <a href="https://laravel.com" target="_blank" class="footer-link me-4">Laravel</a>

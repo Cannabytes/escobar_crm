@@ -63,7 +63,7 @@
             name="email"
             value="{{ old('email') }}"
             class="form-control @error('email') is-invalid @enderror"
-            placeholder="you@example.com"
+            placeholder="{{ __('you@example.com') }}"
             required>
           @error('email')
             <div class="invalid-feedback">{{ $message }}</div>

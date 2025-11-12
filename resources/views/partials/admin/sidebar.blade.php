@@ -51,6 +51,7 @@
       </a>
     </li>
 
+    @if(auth()->user()->hasAnyPermission(['companies.view', 'companies.manage']))
     <li class="menu-header small text-uppercase">
       <span class="menu-header-text">{{ __('Компании') }}</span>
     </li>
@@ -62,12 +63,15 @@
       </a>
     </li>
 
+    @if(auth()->user()->hasAnyPermission(['companies.create', 'companies.manage']))
     <li class="menu-item {{ $currentRoute === 'admin.companies.create' ? 'active' : '' }}">
       <a href="{{ route('admin.companies.create') }}" class="menu-link">
         <i class="menu-icon icon-base ti tabler-building-plus"></i>
         <div>{{ __('Добавить компанию') }}</div>
       </a>
     </li>
+    @endif
+    @endif
 
     <li class="menu-header small text-uppercase">
       <span class="menu-header-text">{{ __('Мои компании') }}</span>
@@ -95,6 +99,7 @@
       </li>
     @endforelse
 
+    @if(auth()->user()->hasAnyPermission(['users.view', 'users.manage']))
     <li class="menu-header small text-uppercase">
       <span class="menu-header-text">{{ __('Пользователи') }}</span>
     </li>
@@ -104,23 +109,38 @@
         <div>{{ __('Список пользователей') }}</div>
       </a>
     </li>
+    @if(auth()->user()->hasAnyPermission(['users.create', 'users.manage']))
     <li class="menu-item {{ $currentRoute === 'admin.users.create' ? 'active' : '' }}">
       <a href="{{ route('admin.users.create') }}" class="menu-link">
         <i class="menu-icon icon-base ti tabler-user-plus"></i>
         <div>{{ __('Создать пользователя') }}</div>
       </a>
     </li>
+    @endif
+    @endif
 
-    @if(auth()->user()->isSuperAdmin())
+    @if(auth()->user()->hasAnyPermission(['logs.view', 'roles.view']) || auth()->user()->isSuperAdmin())
     <li class="menu-header small text-uppercase">
       <span class="menu-header-text">{{ __('Система') }}</span>
     </li>
+    
+    @if(auth()->user()->hasAnyPermission(['roles.view', 'roles.manage']) || auth()->user()->isSuperAdmin())
+    <li class="menu-item {{ in_array($currentRoute, ['admin.roles.index', 'admin.roles.show', 'admin.roles.edit', 'admin.roles.create']) ? 'active' : '' }}">
+      <a href="{{ route('admin.roles.index') }}" class="menu-link">
+        <i class="menu-icon icon-base ti tabler-shield"></i>
+        <div>{{ __('Роли и права') }}</div>
+      </a>
+    </li>
+    @endif
+    
+    @if(auth()->user()->hasAnyPermission(['logs.view']) || auth()->user()->isSuperAdmin())
     <li class="menu-item {{ $currentRoute === 'admin.logs.index' ? 'active' : '' }}">
       <a href="{{ route('admin.logs.index') }}" class="menu-link">
         <i class="menu-icon icon-base ti tabler-list"></i>
         <div>{{ __('logs.page_title') }}</div>
       </a>
     </li>
+    @endif
     @endif
   </ul>
 </aside>

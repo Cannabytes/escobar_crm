@@ -4,10 +4,10 @@
 
 @push('styles')
   <link rel="stylesheet" href="{{ url('public/vendor/vuexy/vendor/libs/@form-validation/form-validation.css') }}">
-  <link rel="stylesheet" href="{{ url('public/vendor/vuexy/vendor/libs/select2/select2.css') }}">
+  <link rel="stylsheet" href="{{ url('public/vendor/vuexy/vendor/libs/select2/select2.css') }}">
 @endpush
 
-@push('scripts')
+@push('scripts')gi
   <script src="{{ url('public/vendor/vuexy/vendor/libs/select2/select2.js') }}"></script>
   <script src="{{ url('public/vendor/vuexy/vendor/libs/@form-validation/popular.js') }}"></script>
   <script src="{{ url('public/vendor/vuexy/vendor/libs/@form-validation/bootstrap5.js') }}"></script>

@@ -22,6 +22,29 @@
     @endphp
 
     <ul class="navbar-nav flex-row align-items-center ms-auto">
+      @if (! empty($supportedLocales))
+        <li class="nav-item dropdown dropdown-language me-3 me-xl-2">
+          <a class="nav-link btn btn-text-secondary dropdown-toggle px-2 d-flex align-items-center"
+             href="#"
+             role="button"
+             data-bs-toggle="dropdown"
+             aria-expanded="false">
+            <i class="icon-base ti tabler-language"></i>
+            <span class="d-none d-lg-inline-block ms-2">{{ $supportedLocales[$currentLocale] ?? strtoupper($currentLocale) }}</span>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end">
+            @foreach ($supportedLocales as $locale => $label)
+              <li>
+                <a class="dropdown-item d-flex align-items-center {{ $locale === $currentLocale ? 'active' : '' }}"
+                   href="{{ route('locale.switch', $locale) }}">
+                  <span class="badge bg-label-primary text-uppercase me-2">{{ $locale }}</span>
+                  <span>{{ $label }}</span>
+                </a>
+              </li>
+            @endforeach
+          </ul>
+        </li>
+      @endif
       @if ($user)
         <li class="nav-item lh-1 me-3">
           <span class="badge bg-label-primary rounded-pill text-uppercase">
@@ -58,12 +81,6 @@
             <a class="dropdown-item" href="{{ route('admin.profile.edit') }}">
               <i class="icon-base ti tabler-user me-2"></i>
               <span class="align-middle">{{ __('Мой профиль') }}</span>
-            </a>
-          </li>
-          <li>
-            <a class="dropdown-item" href="{{ route('admin.settings.edit') }}">
-              <i class="icon-base ti tabler-settings me-2"></i>
-              <span class="align-middle">{{ __('Настройки') }}</span>
             </a>
           </li>
           <li>

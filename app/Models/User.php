@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -10,6 +11,7 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
+    // Старые роли (для обратной совместимости)
     public const ROLE_SUPER_ADMIN = 'super_admin';
     public const ROLE_MODERATOR = 'moderator';
     public const ROLE_VIEWER = 'viewer';
@@ -21,6 +23,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'role_id',
         'phone',
         'operator',
         'telegram',
@@ -76,9 +79,92 @@ class User extends Authenticatable
         });
     }
 
+    /**
+     * Роль пользователя (RBAC)
+     */
+    public function roleModel(): BelongsTo
+    {
+        return $this->belongsTo(Role::class, 'role_id');
+    }
+
     public function isSuperAdmin(): bool
     {
-        return $this->role === self::ROLE_SUPER_ADMIN;
+        // Проверяем и старую систему ролей и новую RBAC
+        if ($this->role === self::ROLE_SUPER_ADMIN) {
+            return true;
+        }
+
+        if ($this->roleModel && $this->roleModel->isSuperAdmin()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Проверить, имеет ли пользователь разрешение
+     */
+    public function hasPermission(string $permissionSlug): bool
+    {
+        // Супер админ имеет все права
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        // Проверка через RBAC роль
+        if ($this->roleModel) {
+            return $this->roleModel->hasPermission($permissionSlug);
+        }
+
+        return false;
+    }
+
+    /**
+     * Проверить, имеет ли пользователь любое из разрешений
+     */
+    public function hasAnyPermission(array $permissionSlugs): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        if ($this->roleModel) {
+            return $this->roleModel->hasAnyPermission($permissionSlugs);
+        }
+
+        return false;
+    }
+
+    /**
+     * Проверить, имеет ли пользователь все разрешения
+     */
+    public function hasAllPermissions(array $permissionSlugs): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        if ($this->roleModel) {
+            return $this->roleModel->hasAllPermissions($permissionSlugs);
+        }
+
+        return false;
+    }
+
+    /**
+     * Получить все разрешения пользователя
+     */
+    public function getAllPermissions()
+    {
+        if ($this->isSuperAdmin()) {
+            return Permission::all();
+        }
+
+        if ($this->roleModel) {
+            return $this->roleModel->permissions;
+        }
+
+        return collect();
     }
 
     // Логи активности пользователя
@@ -98,11 +184,14 @@ class User extends Authenticatable
      */
     public function getOrCreateSettings(): UserSettings
     {
-        if (!$this->settings) {
-            $this->settings()->create([]);
+        $settings = $this->settings;
+
+        if (! $settings) {
+            $settings = $this->settings()->create([]);
+            $this->setRelation('settings', $settings);
         }
 
-        return $this->settings;
+        return $settings;
     }
 
     /**

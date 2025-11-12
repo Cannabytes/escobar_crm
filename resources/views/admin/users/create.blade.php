@@ -167,7 +167,31 @@
 
               <div class="col-md-6">
                 <div class="mb-3">
-                  <label for="role" class="form-label">{{ __('Роль в системе') }}</label>
+                  <label for="role_id" class="form-label">{{ __('Роль в системе (RBAC)') }}</label>
+                  <select
+                    id="role_id"
+                    name="role_id"
+                    class="form-select @error('role_id') is-invalid @enderror">
+                    <option value="">{{ __('Не выбрано (старая система ролей)') }}</option>
+                    @foreach($roles as $role)
+                      <option value="{{ $role->id }}" {{ old('role_id') == $role->id ? 'selected' : '' }}>
+                        {{ $role->name }}
+                        @if($role->description)
+                          - {{ Str::limit($role->description, 50) }}
+                        @endif
+                      </option>
+                    @endforeach
+                  </select>
+                  @error('role_id')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                  @enderror
+                  <small class="text-muted">{{ __('Выберите роль для точной настройки прав доступа') }}</small>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="role" class="form-label">{{ __('Старая система ролей (устарело)') }}</label>
                   <select
                     id="role"
                     name="role"

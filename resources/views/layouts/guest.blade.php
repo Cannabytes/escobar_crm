@@ -38,6 +38,26 @@
     <script src="{{ url('public/vendor/vuexy/js/config.js') }}"></script>
   </head>
   <body>
+    @if (! empty($supportedLocales))
+      <div class="position-absolute top-0 end-0 p-4">
+        <div class="dropdown">
+          <button class="btn btn-text-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="icon-base ti tabler-language"></i>
+            <span class="ms-1">{{ $supportedLocales[$currentLocale] ?? strtoupper($currentLocale) }}</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            @foreach ($supportedLocales as $locale => $label)
+              <li>
+                <a class="dropdown-item {{ $locale === $currentLocale ? 'active' : '' }}" href="{{ route('locale.switch', $locale) }}">
+                  <span class="badge bg-label-primary text-uppercase me-2">{{ $locale }}</span>
+                  <span>{{ $label }}</span>
+                </a>
+              </li>
+            @endforeach
+          </ul>
+        </div>
+      </div>
+    @endif
     <div class="container-xxl">
       <div class="authentication-wrapper authentication-basic container-p-y">
         <div class="authentication-inner py-6">

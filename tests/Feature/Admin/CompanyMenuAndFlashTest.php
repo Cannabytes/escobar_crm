@@ -42,12 +42,14 @@ class CompanyMenuAndFlashTest extends TestCase
 
         SystemState::resetUsersExistCache();
 
-        $response = $this->actingAs($user)->get(route('admin.companies.index'));
+        $response = $this->actingAs($user)
+            ->withSession(['locale' => 'ru'])
+            ->get(route('admin.companies.index'));
 
-        $response->assertSeeText('Мои компании');
+        $response->assertSeeText(__('Мои компании', [], 'ru'));
         $response->assertSeeText($moderatedCompany->name);
         $response->assertSeeText($accessibleCompany->name);
-        $response->assertDontSeeText('Нет закрепленных компаний');
+        $response->assertDontSeeText(__('Нет закрепленных компаний', [], 'ru'));
     }
 
     public function test_company_creation_flash_message_rendered_once(): void
@@ -68,10 +70,23 @@ class CompanyMenuAndFlashTest extends TestCase
                 'moderator_id' => $moderator->getKey(),
             ]);
 
-        $message = 'Компания успешно добавлена.';
+        $messageRu = __('Компания успешно добавлена.', [], 'ru');
+        $messageEn = __('Компания успешно добавлена.');
 
-        $response->assertSeeText($message);
-        $this->assertSame(1, substr_count($response->getContent(), $message));
+        $response->assertSeeText($messageEn);
+        $this->assertSame(1, substr_count($response->getContent(), $messageEn));
+
+        $responseRu = $this->actingAs($superAdmin)
+            ->withSession(['locale' => 'ru'])
+            ->followingRedirects()
+            ->post(route('admin.companies.store'), [
+                'name' => 'Localized Company',
+                'country' => 'UK',
+                'moderator_id' => $moderator->getKey(),
+            ]);
+
+        $responseRu->assertSeeText($messageRu);
+        $this->assertSame(1, substr_count($responseRu->getContent(), $messageRu));
     }
 
     public function test_bank_account_deletion_flash_message_rendered_once(): void
@@ -104,10 +119,31 @@ class CompanyMenuAndFlashTest extends TestCase
             ->followingRedirects()
             ->delete(route('admin.companies.bank-accounts.destroy', [$company, $bankAccount]));
 
-        $message = 'Банковский счет удален.';
+        $messageEn = __('Банковский счет удален.');
+        $messageRu = __('Банковский счет удален.', [], 'ru');
 
-        $response->assertSeeText($message);
-        $this->assertSame(1, substr_count($response->getContent(), $message));
+        $response->assertSeeText($messageEn);
+        $this->assertSame(1, substr_count($response->getContent(), $messageEn));
+
+        $bankAccountRu = CompanyBankAccount::create([
+            'company_id' => $company->getKey(),
+            'bank_name' => 'Test Bank RU',
+            'country' => 'KSA',
+            'company_name' => 'Flash Test Corp',
+            'currency' => 'USD',
+            'account_number' => '987654321',
+            'iban' => null,
+            'swift' => null,
+            'sort_order' => 2,
+        ]);
+
+        $responseRu = $this->actingAs($superAdmin)
+            ->withSession(['locale' => 'ru'])
+            ->followingRedirects()
+            ->delete(route('admin.companies.bank-accounts.destroy', [$company, $bankAccountRu]));
+
+        $responseRu->assertSeeText($messageRu);
+        $this->assertSame(1, substr_count($responseRu->getContent(), $messageRu));
     }
 }
 

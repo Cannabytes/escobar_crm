@@ -4,10 +4,12 @@ use App\Http\Controllers\Admin\CompanyAccessController;
 use App\Http\Controllers\Admin\CompanyBankAccountController;
 use App\Http\Controllers\Admin\CompanyController;
 use App\Http\Controllers\Admin\CompanyCredentialController;
+use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Install\SuperAdminController;
+use App\Http\Controllers\LocaleController;
 use App\Support\SystemState;
 use Illuminate\Support\Facades\Route;
 
@@ -22,6 +24,9 @@ Route::get('/', function () {
 
     return redirect()->route('login');
 });
+
+Route::get('locale/{locale}', LocaleController::class)
+    ->name('locale.switch');
 
 Route::middleware('guest')->group(function () {
     Route::get('install/super-admin', [SuperAdminController::class, 'create'])
@@ -88,8 +93,8 @@ Route::prefix('admin')->name('admin.')->middleware(['ensure.installed', 'auth'])
     Route::post('/profile/avatar', [\App\Http\Controllers\Admin\ProfileController::class, 'uploadAvatar'])->name('profile.avatar.upload');
     Route::delete('/profile/avatar', [\App\Http\Controllers\Admin\ProfileController::class, 'deleteAvatar'])->name('profile.avatar.delete');
 
-    // Настройки шаблона
-    Route::get('/settings', [\App\Http\Controllers\Admin\SettingsController::class, 'edit'])->name('settings.edit');
-    Route::put('/settings', [\App\Http\Controllers\Admin\SettingsController::class, 'update'])->name('settings.update');
-    Route::post('/settings/reset', [\App\Http\Controllers\Admin\SettingsController::class, 'reset'])->name('settings.reset');
+    // Роли и разрешения (только для супер админа)
+    Route::resource('roles', RoleController::class);
+    Route::post('/roles/{role}/toggle-active', [RoleController::class, 'toggleActive'])->name('roles.toggle-active');
+    Route::post('/roles/{role}/clone', [RoleController::class, 'clone'])->name('roles.clone');
 });

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreUserRequest;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -55,7 +56,8 @@ class UserController extends Controller
 
     public function create(): View
     {
-        return view('admin.users.create');
+        $roles = Role::active()->get();
+        return view('admin.users.create', compact('roles'));
     }
 
     public function store(StoreUserRequest $request): RedirectResponse
@@ -66,6 +68,7 @@ class UserController extends Controller
                 'email' => $request->string('email')->value(),
                 'password' => Hash::make($request->string('password')->value()),
                 'role' => $request->string('role')->value(),
+                'role_id' => $request->integer('role_id') ?: null,
                 'phone' => $request->string('phone')->trim()->value() ?: null,
                 'operator' => $request->string('operator')->trim()->value() ?: null,
             ]);

@@ -12,28 +12,41 @@
       </div>
     </div>
 
+    @php
+      $user = auth()->user();
+      $roleLabels = [
+        \App\Models\User::ROLE_SUPER_ADMIN => __('Супер админ'),
+        \App\Models\User::ROLE_MODERATOR => __('Модератор'),
+        \App\Models\User::ROLE_VIEWER => __('Пользователь'),
+      ];
+    @endphp
+
     <ul class="navbar-nav flex-row align-items-center ms-auto">
-      <li class="nav-item lh-1 me-3">
-        <span class="badge bg-label-primary rounded-pill text-uppercase">{{ __('Супер админ') }}</span>
-      </li>
+      @if ($user)
+        <li class="nav-item lh-1 me-3">
+          <span class="badge bg-label-primary rounded-pill text-uppercase">
+            {{ $roleLabels[$user->role] ?? __('Пользователь') }}
+          </span>
+        </li>
+      @endif
       <li class="nav-item navbar-dropdown dropdown-user dropdown">
         <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown">
-          <div class="avatar avatar-online">
-            <img src="{{ url('public/vendor/vuexy/img/avatars/1.png') }}" alt="avatar" class="w-px-40 h-auto rounded-circle">
+          <div class="avatar {{ $user->isOnline() ? 'avatar-online' : '' }}">
+            <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="w-px-40 h-auto rounded-circle">
           </div>
         </a>
         <ul class="dropdown-menu dropdown-menu-end">
           <li>
-            <a class="dropdown-item" href="#">
+            <a class="dropdown-item" href="{{ route('admin.profile.edit') }}">
               <div class="d-flex">
                 <div class="flex-shrink-0 me-3">
-                  <div class="avatar avatar-online">
-                    <img src="{{ url('public/vendor/vuexy/img/avatars/1.png') }}" alt="avatar" class="w-px-40 h-auto rounded-circle">
+                  <div class="avatar {{ $user->isOnline() ? 'avatar-online' : '' }}">
+                    <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="w-px-40 h-auto rounded-circle">
                   </div>
                 </div>
                 <div class="flex-grow-1">
-                  <span class="fw-semibold d-block">{{ auth()->user()->name ?? __('Супер админ') }}</span>
-                  <small class="text-muted">{{ __('Профиль') }}</small>
+                  <span class="fw-semibold d-block">{{ $user->name }}</span>
+                  <small class="text-muted">{{ $user->email }}</small>
                 </div>
               </div>
             </a>
@@ -42,13 +55,13 @@
             <div class="dropdown-divider"></div>
           </li>
           <li>
-            <a class="dropdown-item" href="#">
+            <a class="dropdown-item" href="{{ route('admin.profile.edit') }}">
               <i class="icon-base ti tabler-user me-2"></i>
               <span class="align-middle">{{ __('Мой профиль') }}</span>
             </a>
           </li>
           <li>
-            <a class="dropdown-item" href="#">
+            <a class="dropdown-item" href="{{ route('admin.settings.edit') }}">
               <i class="icon-base ti tabler-settings me-2"></i>
               <span class="align-middle">{{ __('Настройки') }}</span>
             </a>

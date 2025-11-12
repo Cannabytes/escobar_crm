@@ -2,56 +2,168 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
     public const ROLE_SUPER_ADMIN = 'super_admin';
-    public const ROLE_COMPANY_ADMIN = 'company_admin';
-    public const ROLE_COMPANY_VIEWER = 'company_viewer';
+    public const ROLE_MODERATOR = 'moderator';
+    public const ROLE_VIEWER = 'viewer';
 
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
         'password',
         'role',
+        'phone',
+        'telegram',
+        'whatsapp',
+        'last_activity_at',
+        'avatar',
     ];
 
     protected $attributes = [
-        'role' => self::ROLE_COMPANY_VIEWER,
+        'role' => self::ROLE_VIEWER,
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'last_activity_at' => 'datetime',
         ];
+    }
+
+    // Компании, которые модерирует пользователь
+    public function moderatedCompanies(): HasMany
+    {
+        return $this->hasMany(Company::class, 'moderator_id');
+    }
+
+    // Компании, к которым у пользователя есть доступ
+    public function accessibleCompanies(): BelongsToMany
+    {
+        return $this->belongsToMany(Company::class, 'company_user_access')
+            ->withPivot('access_type')
+            ->withTimestamps();
+    }
+
+    // Все компании, доступные пользователю (модерируемые + с доступом)
+    public function allAccessibleCompanies()
+    {
+        if ($this->role === self::ROLE_SUPER_ADMIN) {
+            return Company::query();
+        }
+
+        return Company::query()->where(function ($query) {
+            $query->where('moderator_id', $this->id)
+                ->orWhereHas('accessUsers', function ($q) {
+                    $q->where('user_id', $this->id);
+                });
+        });
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === self::ROLE_SUPER_ADMIN;
+    }
+
+    // Логи активности пользователя
+    public function activityLogs(): HasMany
+    {
+        return $this->hasMany(ActivityLog::class);
+    }
+
+    // Настройки пользователя
+    public function settings(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(UserSettings::class);
+    }
+
+    /**
+     * Получить или создать настройки пользователя
+     */
+    public function getOrCreateSettings(): UserSettings
+    {
+        if (!$this->settings) {
+            $this->settings()->create([]);
+        }
+
+        return $this->settings;
+    }
+
+    /**
+     * Проверить, находится ли пользователь онлайн
+     * Считаем пользователя онлайн, если активность была в последние 5 минут
+     */
+    public function isOnline(): bool
+    {
+        if (!$this->last_activity_at) {
+            return false;
+        }
+
+        return $this->last_activity_at->diffInMinutes(now()) < 5;
+    }
+
+    /**
+     * Получить читаемое время последней активности
+     */
+    public function getLastActivityAttribute(): string
+    {
+        if (!$this->last_activity_at) {
+            return __('users.never_active');
+        }
+
+        if ($this->isOnline()) {
+            return __('users.online');
+        }
+
+        return $this->getHumanReadableTime($this->last_activity_at);
+    }
+
+    /**
+     * Получить человекочитаемое время
+     */
+    protected function getHumanReadableTime($datetime): string
+    {
+        $diff = $datetime->diffInMinutes(now());
+
+        if ($diff < 60) {
+            return __('users.minutes_ago', ['count' => $diff]);
+        }
+
+        $hours = floor($diff / 60);
+        if ($hours < 24) {
+            return __('users.hours_ago', ['count' => $hours]);
+        }
+
+        $days = floor($hours / 24);
+        return __('users.days_ago', ['count' => $days]);
+    }
+
+    /**
+     * Получить URL аватара или дефолтный
+     */
+    public function getAvatarUrlAttribute(): string
+    {
+        if ($this->avatar) {
+            return asset('storage/' . $this->avatar);
+        }
+
+        // Генерируем аватар с инициалами через UI Avatars
+        $name = urlencode($this->name);
+        return "https://ui-avatars.com/api/?name={$name}&color=7F9CF5&background=EBF4FF&size=128";
     }
 }

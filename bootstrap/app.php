@@ -11,7 +11,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->alias([
+            'ensure.installed' => \App\Http\Middleware\EnsureSystemInstalled::class,
+        ]);
+        
+        // Добавляем middleware для логирования активности пользователей
+        $middleware->append(\App\Http\Middleware\LogUserActivity::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

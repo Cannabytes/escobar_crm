@@ -33,6 +33,8 @@
 
     <!-- Helpers -->
     <script src="{{ url('public/vendor/vuexy/vendor/js/helpers.js') }}"></script>
+    <!-- Pickr library for template customizer -->
+    <script src="{{ url('public/vendor/vuexy/vendor/libs/pickr/pickr.js') }}"></script>
     <!-- Template customizer & Theme config files MUST be included after core stylesheets and helpers.js in the <head> section -->
     <script src="{{ url('public/vendor/vuexy/vendor/js/template-customizer.js') }}"></script>
     <!-- Config: Mandatory theme config file contain global vars & default theme options -->

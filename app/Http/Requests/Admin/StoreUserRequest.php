@@ -29,10 +29,11 @@ class StoreUserRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'min:3', 'max:100'],
             'email' => ['required', 'string', 'email:rfc,dns', 'max:150', Rule::unique(User::class, 'email')],
-            'password' => ['required', 'string', 'min:8', 'max:128', 'confirmed'],
+            'password' => ['required', 'string', 'min:6', 'max:128', 'confirmed'],
             'role' => ['required', 'string', Rule::in([
-                User::ROLE_COMPANY_ADMIN,
-                User::ROLE_COMPANY_VIEWER,
+                User::ROLE_SUPER_ADMIN,
+                User::ROLE_MODERATOR,
+                User::ROLE_VIEWER,
             ])],
         ];
     }

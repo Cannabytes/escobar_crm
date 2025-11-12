@@ -1,18 +1,95 @@
 <?php
 
+use App\Http\Controllers\Admin\CompanyAccessController;
+use App\Http\Controllers\Admin\CompanyBankAccountController;
 use App\Http\Controllers\Admin\CompanyController;
+use App\Http\Controllers\Admin\CompanyCredentialController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Install\SuperAdminController;
+use App\Support\SystemState;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/admin/companies/create');
+Route::get('/', function () {
+    if (! SystemState::usersExist()) {
+        return redirect()->route('install.super-admin.create');
+    }
 
-Route::prefix('admin')->name('admin.')->group(function () {
-    Route::redirect('/', '/admin/companies/create')->name('dashboard');
+    if (auth()->check()) {
+        return redirect()->route('admin.dashboard');
+    }
 
-    Route::get('/companies/create', [CompanyController::class, 'create'])->name('companies.create');
-    Route::post('/companies', [CompanyController::class, 'store'])->name('companies.store');
+    return redirect()->route('login');
+});
 
+Route::middleware('guest')->group(function () {
+    Route::get('install/super-admin', [SuperAdminController::class, 'create'])
+        ->name('install.super-admin.create');
+    Route::post('install/super-admin', [SuperAdminController::class, 'store'])
+        ->name('install.super-admin.store');
+});
+
+Route::middleware(['guest', 'ensure.installed'])->group(function () {
+    Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
+    Route::post('login', [AuthenticatedSessionController::class, 'store'])->name('login.store');
+
+    Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
+    Route::post('register', [RegisteredUserController::class, 'store'])->name('register.store');
+});
+
+Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
+    ->middleware('auth')
+    ->name('logout');
+
+Route::prefix('admin')->name('admin.')->middleware(['ensure.installed', 'auth'])->group(function () {
+    Route::redirect('/', '/admin/companies')->name('dashboard');
+
+    // Компании
+    Route::resource('companies', CompanyController::class);
+
+    // Банковские счета компании
+    Route::post('companies/{company}/bank-accounts', [CompanyBankAccountController::class, 'store'])
+        ->name('companies.bank-accounts.store');
+    Route::put('companies/{company}/bank-accounts/{bankAccount}', [CompanyBankAccountController::class, 'update'])
+        ->name('companies.bank-accounts.update');
+    Route::delete('companies/{company}/bank-accounts/{bankAccount}', [CompanyBankAccountController::class, 'destroy'])
+        ->name('companies.bank-accounts.destroy');
+
+    // Учетные данные компании
+    Route::post('companies/{company}/credentials', [CompanyCredentialController::class, 'store'])
+        ->name('companies.credentials.store');
+    Route::put('companies/{company}/credentials', [CompanyCredentialController::class, 'update'])
+        ->name('companies.credentials.update');
+
+    // Лицензионные данные компании
+    Route::put('companies/{company}/license', [CompanyController::class, 'updateLicense'])
+        ->name('companies.license.update');
+
+    // Доступ пользователей к компании
+    Route::post('companies/{company}/access', [CompanyAccessController::class, 'store'])
+        ->name('companies.access.store');
+    Route::delete('companies/{company}/access/{access}', [CompanyAccessController::class, 'destroy'])
+        ->name('companies.access.destroy');
+
+    // Пользователи
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
     Route::post('/users', [UserController::class, 'store'])->name('users.store');
+
+    // Логи активности (только для супер админа)
+    Route::get('/logs', [\App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('logs.index');
+    Route::get('/logs/{log}', [\App\Http\Controllers\Admin\ActivityLogController::class, 'show'])->name('logs.show');
+
+    // Профиль пользователя
+    Route::get('/profile', [\App\Http\Controllers\Admin\ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/profile', [\App\Http\Controllers\Admin\ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [\App\Http\Controllers\Admin\ProfileController::class, 'updatePassword'])->name('profile.password.update');
+    Route::post('/profile/avatar', [\App\Http\Controllers\Admin\ProfileController::class, 'uploadAvatar'])->name('profile.avatar.upload');
+    Route::delete('/profile/avatar', [\App\Http\Controllers\Admin\ProfileController::class, 'deleteAvatar'])->name('profile.avatar.delete');
+
+    // Настройки шаблона
+    Route::get('/settings', [\App\Http\Controllers\Admin\SettingsController::class, 'edit'])->name('settings.edit');
+    Route::put('/settings', [\App\Http\Controllers\Admin\SettingsController::class, 'update'])->name('settings.update');
+    Route::post('/settings/reset', [\App\Http\Controllers\Admin\SettingsController::class, 'reset'])->name('settings.reset');
 });

@@ -47,8 +47,8 @@
                 message: '{{ __('Введите пароль') }}'
               },
               stringLength: {
-                min: 8,
-                message: '{{ __('Пароль должен содержать минимум 8 символов') }}'
+                min: 6,
+                message: '{{ __('Пароль должен содержать минимум 6 символов') }}'
               }
             }
           },
@@ -142,11 +142,11 @@
                     class="form-select @error('role') is-invalid @enderror"
                     required>
                     <option value="" disabled {{ old('role') ? '' : 'selected' }}>{{ __('Выберите роль') }}</option>
-                    <option value="company_admin" {{ old('role') === 'company_admin' ? 'selected' : '' }}>
-                      {{ __('Администратор компании') }}
+                    <option value="moderator" {{ old('role') === 'moderator' ? 'selected' : '' }}>
+                      {{ __('Модератор') }}
                     </option>
-                    <option value="company_viewer" {{ old('role') === 'company_viewer' ? 'selected' : '' }}>
-                      {{ __('Наблюдатель компании') }}
+                    <option value="viewer" {{ old('role') === 'viewer' ? 'selected' : '' }}>
+                      {{ __('Пользователь') }}
                     </option>
                   </select>
                   @error('role')
@@ -165,14 +165,14 @@
                       name="password"
                       class="form-control @error('password') is-invalid @enderror"
                       placeholder="••••••••"
-                      minlength="8"
+                      minlength="6"
                       required>
                     <span class="input-group-text cursor-pointer"><i class="icon-base ti tabler-eye-off"></i></span>
                     @error('password')
                       <div class="invalid-feedback d-block">{{ $message }}</div>
                     @enderror
                   </div>
-                  <div class="form-text">{{ __('Минимум 8 символов, рекомендуем использовать буквы и цифры.') }}</div>
+                  <div class="form-text">{{ __('Минимум 6 символов, рекомендуем использовать буквы и цифры.') }}</div>
                 </div>
               </div>
 
@@ -185,7 +185,7 @@
                     name="password_confirmation"
                     class="form-control @error('password_confirmation') is-invalid @enderror"
                     placeholder="••••••••"
-                    minlength="8"
+                    minlength="6"
                     required>
                   @error('password_confirmation')
                     <div class="invalid-feedback">{{ $message }}</div>

@@ -88,6 +88,8 @@
                     <th scope="col">{{ __('Имя') }}</th>
                     <th scope="col">{{ __('Email') }}</th>
                     <th scope="col">{{ __('Роль') }}</th>
+                    <th scope="col">{{ __('Статус') }}</th>
+                    <th scope="col">{{ __('Компании') }}</th>
                     <th scope="col">{{ __('Дата создания') }}</th>
                   </tr>
                 </thead>
@@ -96,7 +98,12 @@
                     <tr>
                       <td>{{ $users->firstItem() + $index }}</td>
                       <td class="fw-medium">
-                        {{ $user->name }}
+                        <div class="d-flex align-items-center">
+                          <div class="avatar avatar-sm {{ $user->isOnline() ? 'avatar-online' : '' }} me-2">
+                            <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="rounded-circle">
+                          </div>
+                          <span>{{ $user->name }}</span>
+                        </div>
                       </td>
                       <td>
                         <a href="mailto:{{ $user->email }}" class="text-primary">{{ $user->email }}</a>
@@ -105,6 +112,49 @@
                         <span class="badge bg-label-primary text-capitalize">
                           {{ $roleLabels[$user->role] ?? $user->role }}
                         </span>
+                      </td>
+                      <td>
+                        @if($user->isOnline())
+                          <span class="badge bg-success">
+                            <i class="bx bx-circle bx-xs"></i> {{ __('users.online') }}
+                          </span>
+                        @else
+                          <small class="text-muted">
+                            {{ $user->last_activity }}
+                          </small>
+                        @endif
+                      </td>
+                      <td>
+                        @php
+                          $moderatedCompanies = $user->moderatedCompanies ?? collect();
+                          $moderatedCompanyIds = $moderatedCompanies->pluck('id');
+                          $accessibleCompanies = ($user->accessibleCompanies ?? collect())
+                            ->reject(fn ($company) => $moderatedCompanyIds->contains($company->id));
+                        @endphp
+
+                        @if ($moderatedCompanies->isEmpty() && $accessibleCompanies->isEmpty())
+                          <span class="text-muted">—</span>
+                        @else
+                          <div class="d-flex flex-wrap gap-1">
+                            @foreach ($moderatedCompanies as $company)
+                              <span class="badge bg-label-primary">
+                                {{ $company->name }}
+                                <span class="text-uppercase ms-1" style="font-size: 0.7rem;">{{ __('Модератор') }}</span>
+                              </span>
+                            @endforeach
+                            @foreach ($accessibleCompanies as $company)
+                              @php
+                                $isEditor = $company->pivot->access_type === 'edit';
+                                $badgeClass = $isEditor ? 'bg-label-success' : 'bg-label-info';
+                                $badgeText = $isEditor ? __('Редактирование') : __('Просмотр');
+                              @endphp
+                              <span class="badge {{ $badgeClass }}">
+                                {{ $company->name }}
+                                <span class="text-uppercase ms-1" style="font-size: 0.7rem;">{{ $badgeText }}</span>
+                              </span>
+                            @endforeach
+                          </div>
+                        @endif
                       </td>
                       <td>{{ optional($user->created_at)->format('d.m.Y H:i') }}</td>
                     </tr>

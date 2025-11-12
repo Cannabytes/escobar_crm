@@ -2,7 +2,7 @@
 
 <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
   <div class="app-brand demo">
-    <a href="{{ route('admin.users.index') }}" class="app-brand-link">
+    <a href="{{ route('admin.companies.index') }}" class="app-brand-link">
       <span class="app-brand-logo demo">
         <span class="text-primary">
           <svg width="32" height="22" viewBox="0 0 32 22" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -50,9 +50,17 @@
     <li class="menu-header small text-uppercase">
       <span class="menu-header-text">{{ __('Компании') }}</span>
     </li>
+    
+    <li class="menu-item {{ in_array($currentRoute, ['admin.companies.index', 'admin.companies.show', 'admin.companies.edit']) ? 'active' : '' }}">
+      <a href="{{ route('admin.companies.index') }}" class="menu-link">
+        <i class="menu-icon icon-base ti tabler-building"></i>
+        <div>{{ __('Список компаний') }}</div>
+      </a>
+    </li>
+
     <li class="menu-item {{ $currentRoute === 'admin.companies.create' ? 'active' : '' }}">
       <a href="{{ route('admin.companies.create') }}" class="menu-link">
-        <i class="menu-icon icon-base ti tabler-building"></i>
+        <i class="menu-icon icon-base ti tabler-building-plus"></i>
         <div>{{ __('Добавить компанию') }}</div>
       </a>
     </li>
@@ -72,6 +80,17 @@
         <div>{{ __('Создать пользователя') }}</div>
       </a>
     </li>
+
+    @if(auth()->user()->isSuperAdmin())
+    <li class="menu-header small text-uppercase">
+      <span class="menu-header-text">{{ __('Система') }}</span>
+    </li>
+    <li class="menu-item {{ $currentRoute === 'admin.logs.index' ? 'active' : '' }}">
+      <a href="{{ route('admin.logs.index') }}" class="menu-link">
+        <i class="menu-icon icon-base ti tabler-list"></i>
+        <div>{{ __('logs.page_title') }}</div>
+      </a>
+    </li>
+    @endif
   </ul>
 </aside>
-

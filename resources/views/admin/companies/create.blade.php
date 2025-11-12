@@ -4,376 +4,203 @@
 
 @push('styles')
   <link rel="stylesheet" href="{{ url('public/vendor/vuexy/vendor/libs/@form-validation/form-validation.css') }}">
+  <link rel="stylesheet" href="{{ url('public/vendor/vuexy/vendor/libs/select2/select2.css') }}">
 @endpush
 
 @push('scripts')
+  <script src="{{ url('public/vendor/vuexy/vendor/libs/select2/select2.js') }}"></script>
   <script src="{{ url('public/vendor/vuexy/vendor/libs/@form-validation/popular.js') }}"></script>
   <script src="{{ url('public/vendor/vuexy/vendor/libs/@form-validation/bootstrap5.js') }}"></script>
   <script src="{{ url('public/vendor/vuexy/vendor/libs/@form-validation/auto-focus.js') }}"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    // Ждем полной загрузки всех скриптов
+    window.addEventListener('load', function() {
+      // Инициализация Select2
+      if (typeof jQuery !== 'undefined' && jQuery.fn.select2) {
+        jQuery('.select2').select2({
+          placeholder: '{{ __('Выберите из списка') }}',
+          allowClear: false,
+          width: '100%'
+        });
+      }
+
       const form = document.querySelector('#company-create-form');
-      if (!form || typeof FormValidation === 'undefined') {
+      if (!form) {
         return;
       }
 
-      const getDateValue = (input) => {
-        if (!input || !input.value) {
-          return null;
-        }
-        const value = input.value;
-        const parsed = new Date(value);
-        return Number.isNaN(parsed.getTime()) ? null : parsed;
-      };
-
-      FormValidation.formValidation(form, {
-        fields: {
-          license_number: {
-            validators: {
-              notEmpty: { message: '{{ __('Укажите номер лицензии') }}' },
-              stringLength: {
-                max: 191,
-                message: '{{ __('Максимальная длина — 191 символ') }}'
+      // Инициализация валидации только если библиотека доступна
+      if (typeof FormValidation !== 'undefined') {
+        const fv = FormValidation.formValidation(form, {
+          fields: {
+            name: {
+              validators: {
+                notEmpty: { message: '{{ __('Укажите название компании') }}' },
+                stringLength: {
+                  max: 191,
+                  message: '{{ __('Максимальная длина — 191 символ') }}'
+                }
               }
-            }
-          },
-          registration_number: {
-            validators: {
-              notEmpty: { message: '{{ __('Укажите номер регистрации') }}' },
-              stringLength: {
-                max: 191,
-                message: '{{ __('Максимальная длина — 191 символ') }}'
+            },
+            country: {
+              validators: {
+                notEmpty: { message: '{{ __('Выберите страну') }}' }
               }
-            }
-          },
-          incorporation_date: {
-            validators: {
-              notEmpty: { message: '{{ __('Выберите дату основания') }}' }
-            }
-          },
-          expiration_date: {
-            validators: {
-              notEmpty: { message: '{{ __('Выберите дату истечения срока') }}' },
-              callback: {
-                message: '{{ __('Дата истечения должна быть позже даты основания') }}',
-                callback: (input) => {
-                  const startDate = getDateValue(form.querySelector('[name="incorporation_date"]'));
-                  const endDate = getDateValue(input.element);
-                  if (!startDate || !endDate) {
-                    return true;
+            },
+            moderator_id: {
+              validators: {
+                notEmpty: { message: '{{ __('Выберите модератора') }}' },
+                callback: {
+                  message: '{{ __('Выберите модератора') }}',
+                  callback: function(value) {
+                    return value !== '' && value !== null && value !== '0';
                   }
-                  return endDate > startDate;
                 }
               }
             }
           },
-          jurisdiction_zone: {
-            validators: {
-              notEmpty: { message: '{{ __('Укажите зону регистрации') }}' },
-              stringLength: {
-                max: 191,
-                message: '{{ __('Максимальная длина — 191 символ') }}'
-              }
-            }
-          },
-          business_activities: {
-            validators: {
-              notEmpty: { message: '{{ __('Опишите виды деятельности') }}' }
-            }
-          },
-          legal_address: {
-            validators: {
-              notEmpty: { message: '{{ __('Укажите юридический адрес') }}' },
-              stringLength: {
-                max: 255,
-                message: '{{ __('Максимальная длина — 255 символов') }}'
-              }
-            }
-          },
-          factual_address: {
-            validators: {
-              notEmpty: { message: '{{ __('Укажите фактический адрес') }}' },
-              stringLength: {
-                max: 255,
-                message: '{{ __('Максимальная длина — 255 символов') }}'
-              }
-            }
-          },
-          owner_name: {
-            validators: {
-              notEmpty: { message: '{{ __('Укажите имя владельца') }}' },
-              stringLength: {
-                max: 191,
-                message: '{{ __('Максимальная длина — 191 символ') }}'
-              }
-            }
-          },
-          email: {
-            validators: {
-              notEmpty: { message: '{{ __('Укажите email') }}' },
-              emailAddress: { message: '{{ __('Введите корректный email') }}' }
-            }
-          },
-          phone: {
-            validators: {
-              notEmpty: { message: '{{ __('Укажите телефон') }}' },
-              stringLength: {
-                max: 64,
-                message: '{{ __('Максимальная длина — 64 символа') }}'
-              }
-            }
-          },
-          website: {
-            validators: {
-              uri: {
-                message: '{{ __('Введите корректный URL') }}',
-                allowLocal: false
-              },
-              stringLength: {
-                max: 255,
-                message: '{{ __('Максимальная длина — 255 символов') }}'
-              }
-            }
+          plugins: {
+            trigger: new FormValidation.plugins.Trigger(),
+            bootstrap5: new FormValidation.plugins.Bootstrap5({
+              eleValidClass: '',
+              rowSelector: '.mb-3'
+            }),
+            submitButton: new FormValidation.plugins.SubmitButton(),
+            autoFocus: new FormValidation.plugins.AutoFocus()
           }
-        },
-        plugins: {
-          trigger: new FormValidation.plugins.Trigger(),
-          bootstrap5: new FormValidation.plugins.Bootstrap5({
-            rowSelector: '.mb-3'
-          }),
-          submitButton: new FormValidation.plugins.SubmitButton(),
-          autoFocus: new FormValidation.plugins.AutoFocus()
-        }
-      });
+        });
+
+        fv.on('core.form.valid', function() {
+          form.submit();
+        });
+      }
     });
   </script>
 @endpush
 
 @section('content')
+<div class="container-xxl flex-grow-1 container-p-y">
+  <h4 class="fw-bold mb-4">
+    <span class="text-muted fw-light">{{ __('Управление') }} / {{ __('Компании') }} /</span> {{ __('Добавление') }}
+  </h4>
+
+  @if (session('status'))
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+      {{ session('status') }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  @endif
+
+  @if ($errors->any())
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      <h5 class="alert-heading mb-2">{{ __('Ошибки при заполнении формы') }}</h5>
+      <ul class="mb-0">
+        @foreach ($errors->all() as $error)
+          <li>{{ $error }}</li>
+        @endforeach
+      </ul>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  @endif
+
   <div class="row">
     <div class="col-12">
       <div class="card">
-        <div class="card-header pb-2">
-          <h5 class="card-title mb-0">{{ __('Новая компания') }}</h5>
+        <div class="card-header">
+          <h5 class="mb-0">{{ __('Основные данные компании') }}</h5>
           <small class="text-muted">
-            {{ __('Заполните карточку компании для учёта и назначения ответственных сотрудников.') }}
+            {{ __('Заполните информацию о компании и выберите модератора') }}
           </small>
         </div>
-        <div class="card-body pt-3">
-          <form id="company-create-form" method="POST" action="{{ route('admin.companies.store') }}" novalidate>
+        <div class="card-body">
+          <form id="company-create-form" action="{{ route('admin.companies.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
 
-            <div class="row g-4">
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label for="license_number" class="form-label">{{ __('Номер лицензии') }}</label>
-                  <input
-                    type="text"
-                    id="license_number"
-                    name="license_number"
-                    class="form-control @error('license_number') is-invalid @enderror"
-                    value="{{ old('license_number') }}"
-                    placeholder="{{ __('Например, LIC-123456') }}"
-                    required>
-                  @error('license_number')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                  @enderror
-                </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="name" class="form-label required">{{ __('Название компании') }}</label>
+                <input type="text" class="form-control @error('name') is-invalid @enderror" 
+                       id="name" name="name" value="{{ old('name') }}" 
+                       placeholder="{{ __('ООО "Компания"') }}" required>
+                @error('name')
+                  <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
               </div>
 
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label for="registration_number" class="form-label">{{ __('Номер регистрации') }}</label>
-                  <input
-                    type="text"
-                    id="registration_number"
-                    name="registration_number"
-                    class="form-control @error('registration_number') is-invalid @enderror"
-                    value="{{ old('registration_number') }}"
-                    placeholder="{{ __('Например, REG-987654') }}"
-                    required>
-                  @error('registration_number')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                  @enderror
-                </div>
-              </div>
-
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label for="incorporation_date" class="form-label">{{ __('Дата основания') }}</label>
-                  <input
-                    type="date"
-                    id="incorporation_date"
-                    name="incorporation_date"
-                    class="form-control @error('incorporation_date') is-invalid @enderror"
-                    value="{{ old('incorporation_date') }}"
-                    required>
-                  @error('incorporation_date')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                  @enderror
-                </div>
-              </div>
-
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label for="expiration_date" class="form-label">{{ __('Дата истечения срока') }}</label>
-                  <input
-                    type="date"
-                    id="expiration_date"
-                    name="expiration_date"
-                    class="form-control @error('expiration_date') is-invalid @enderror"
-                    value="{{ old('expiration_date') }}"
-                    required>
-                  @error('expiration_date')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                  @enderror
-                </div>
-              </div>
-
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label for="jurisdiction_zone" class="form-label">{{ __('Юрисдикция / зона регистрации') }}</label>
-                  <input
-                    type="text"
-                    id="jurisdiction_zone"
-                    name="jurisdiction_zone"
-                    class="form-control @error('jurisdiction_zone') is-invalid @enderror"
-                    value="{{ old('jurisdiction_zone') }}"
-                    placeholder="{{ __('Например, ОАЭ, DMCC') }}"
-                    required>
-                  @error('jurisdiction_zone')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                  @enderror
-                </div>
-              </div>
-
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label for="owner_name" class="form-label">{{ __('Имя владельца') }}</label>
-                  <input
-                    type="text"
-                    id="owner_name"
-                    name="owner_name"
-                    class="form-control @error('owner_name') is-invalid @enderror"
-                    value="{{ old('owner_name') }}"
-                    placeholder="{{ __('ФИО владельца') }}"
-                    required>
-                  @error('owner_name')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                  @enderror
-                </div>
-              </div>
-
-              <div class="col-12">
-                <div class="mb-3">
-                  <label for="business_activities" class="form-label">{{ __('Виды деятельности') }}</label>
-                  <textarea
-                    id="business_activities"
-                    name="business_activities"
-                    class="form-control @error('business_activities') is-invalid @enderror"
-                    rows="3"
-                    placeholder="{{ __('Опишите основные направления бизнеса, лицензии и услуги') }}"
-                    required>{{ old('business_activities') }}</textarea>
-                  @error('business_activities')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                  @enderror
-                </div>
-              </div>
-
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label for="legal_address" class="form-label">{{ __('Юридический адрес') }}</label>
-                  <input
-                    type="text"
-                    id="legal_address"
-                    name="legal_address"
-                    class="form-control @error('legal_address') is-invalid @enderror"
-                    value="{{ old('legal_address') }}"
-                    placeholder="{{ __('Адрес согласно регистрационным документам') }}"
-                    required>
-                  @error('legal_address')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                  @enderror
-                </div>
-              </div>
-
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label for="factual_address" class="form-label">{{ __('Фактический адрес') }}</label>
-                  <input
-                    type="text"
-                    id="factual_address"
-                    name="factual_address"
-                    class="form-control @error('factual_address') is-invalid @enderror"
-                    value="{{ old('factual_address') }}"
-                    placeholder="{{ __('Адрес фактического расположения офиса') }}"
-                    required>
-                  @error('factual_address')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                  @enderror
-                </div>
-              </div>
-
-              <div class="col-md-4">
-                <div class="mb-3">
-                  <label for="email" class="form-label">{{ __('Email') }}</label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    class="form-control @error('email') is-invalid @enderror"
-                    value="{{ old('email') }}"
-                    placeholder="company@example.com"
-                    required>
-                  @error('email')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                  @enderror
-                </div>
-              </div>
-
-              <div class="col-md-4">
-                <div class="mb-3">
-                  <label for="phone" class="form-label">{{ __('Телефон') }}</label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    name="phone"
-                    class="form-control @error('phone') is-invalid @enderror"
-                    value="{{ old('phone') }}"
-                    placeholder="+971 50 123 4567"
-                    required>
-                  @error('phone')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                  @enderror
-                </div>
-              </div>
-
-              <div class="col-md-4">
-                <div class="mb-3">
-                  <label for="website" class="form-label">{{ __('Веб-сайт') }}</label>
-                  <input
-                    type="url"
-                    id="website"
-                    name="website"
-                    class="form-control @error('website') is-invalid @enderror"
-                    value="{{ old('website') }}"
-                    placeholder="https://example.com">
-                  @error('website')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                  @enderror
-                </div>
+              <div class="col-md-6 mb-3">
+                <label for="country" class="form-label required">{{ __('Страна') }}</label>
+                <select class="form-select select2 @error('country') is-invalid @enderror" 
+                        id="country" name="country" required>
+                  <option value="">{{ __('Выберите страну') }}</option>
+                  <option value="UAE" {{ old('country') == 'UAE' ? 'selected' : '' }}>{{ __('ОАЭ') }}</option>
+                  <option value="Cyprus" {{ old('country') == 'Cyprus' ? 'selected' : '' }}>{{ __('Кипр') }}</option>
+                  <option value="Malta" {{ old('country') == 'Malta' ? 'selected' : '' }}>{{ __('Мальта') }}</option>
+                  <option value="Seychelles" {{ old('country') == 'Seychelles' ? 'selected' : '' }}>{{ __('Сейшелы') }}</option>
+                  <option value="BVI" {{ old('country') == 'BVI' ? 'selected' : '' }}>{{ __('BVI') }}</option>
+                  <option value="USA" {{ old('country') == 'USA' ? 'selected' : '' }}>{{ __('США') }}</option>
+                  <option value="UK" {{ old('country') == 'UK' ? 'selected' : '' }}>{{ __('Великобритания') }}</option>
+                  <option value="Singapore" {{ old('country') == 'Singapore' ? 'selected' : '' }}>{{ __('Сингапур') }}</option>
+                  <option value="Hong Kong" {{ old('country') == 'Hong Kong' ? 'selected' : '' }}>{{ __('Гонконг') }}</option>
+                  <option value="Other" {{ old('country') == 'Other' ? 'selected' : '' }}>{{ __('Другая') }}</option>
+                </select>
+                @error('country')
+                  <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
               </div>
             </div>
 
-            <div class="d-flex justify-content-end gap-3 mt-4">
-              <button type="reset" class="btn btn-label-secondary">{{ __('Сбросить') }}</button>
-              <button type="submit" class="btn btn-primary">{{ __('Сохранить компанию') }}</button>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="moderator_id" class="form-label required">{{ __('Модератор (кто будет вести)') }}</label>
+                <select class="form-select select2 @error('moderator_id') is-invalid @enderror" 
+                        id="moderator_id" name="moderator_id" required>
+                  <option value="">{{ __('Выберите модератора') }}</option>
+                  @foreach ($moderators as $moderator)
+                    <option value="{{ $moderator->id }}" {{ old('moderator_id') == $moderator->id ? 'selected' : '' }}>
+                      {{ $moderator->name }} ({{ $moderator->email }})
+                    </option>
+                  @endforeach
+                </select>
+                @error('moderator_id')
+                  <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+                <small class="text-muted">
+                  {{ __('Модератор будет вести эту компанию и иметь полный доступ к её данным') }}
+                </small>
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label for="license_file" class="form-label">{{ __('Лицензия компании') }}</label>
+                <input type="file" class="form-control @error('license_file') is-invalid @enderror" 
+                       id="license_file" name="license_file" accept=".jpg,.jpeg,.png">
+                @error('license_file')
+                  <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+                <small class="text-muted">
+                  {{ __('Форматы: JPG, PNG. Максимальный размер: 5 МБ') }}
+                </small>
+              </div>
+            </div>
+
+            <div class="mt-4">
+              <button type="submit" class="btn btn-primary me-2">
+                <i class="mdi mdi-content-save me-1"></i> {{ __('Сохранить') }}
+              </button>
+              <a href="{{ route('admin.companies.index') }}" class="btn btn-label-secondary">
+                {{ __('Отмена') }}
+              </a>
             </div>
           </form>
         </div>
       </div>
     </div>
   </div>
+</div>
+
+<style>
+  .required:after {
+    content: " *";
+    color: red;
+  }
+</style>
 @endsection
-
-

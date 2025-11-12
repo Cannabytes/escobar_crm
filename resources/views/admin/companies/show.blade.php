@@ -285,16 +285,97 @@
                           @endif
                         </dl>
                       </div>
-                      <div class="ms-3">
+                      <div class="ms-3 d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-icon btn-label-primary" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#editBankAccountModal{{ $account->id }}">
+                          <i class="mdi mdi-pencil-outline"></i>
+                        </button>
                         <form action="{{ route('admin.companies.bank-accounts.destroy', [$company, $account]) }}" 
-                              method="POST" onsubmit="return confirm('{{ __('Удалить этот счет?') }}')">
+                              method="POST" class="d-inline" 
+                              onsubmit="return confirm('{{ __('Удалить этот счет?') }}')">
                           @csrf
                           @method('DELETE')
                           <button type="submit" class="btn btn-sm btn-icon btn-label-danger">
-                            <i class="mdi mdi-trash-can-outline"></i>
+                            <i class="mdi mdi-delete-outline"></i>
                           </button>
                         </form>
                       </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Modal: Редактировать банковский счет -->
+                <div class="modal fade" id="editBankAccountModal{{ $account->id }}" tabindex="-1">
+                  <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                      <form action="{{ route('admin.companies.bank-accounts.update', [$company, $account]) }}" method="POST">
+                        @csrf
+                        @method('PUT')
+                        <div class="modal-header">
+                          <h5 class="modal-title">{{ __('Редактировать банковский счет') }}</h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                          <div class="row">
+                            <div class="col-md-6 mb-3">
+                              <label class="form-label required">{{ __('Название банка') }}</label>
+                              <input type="text" class="form-control" name="bank_name" 
+                                     value="{{ old('bank_name', $account->bank_name) }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                              <label class="form-label required">{{ __('Страна') }}</label>
+                              <input type="text" class="form-control" name="country" 
+                                     value="{{ old('country', $account->country) }}" required>
+                            </div>
+                          </div>
+
+                          <div class="mb-3">
+                            <label class="form-label required">{{ __('Название компании') }}</label>
+                            <input type="text" class="form-control" name="company_name" 
+                                   value="{{ old('company_name', $account->company_name) }}" required>
+                          </div>
+
+                          <div class="row">
+                            <div class="col-md-4 mb-3">
+                              <label class="form-label required">{{ __('Валюта') }}</label>
+                              <select class="form-select" name="currency" required>
+                                <option value="USD" {{ $account->currency === 'USD' ? 'selected' : '' }}>USD</option>
+                                <option value="EUR" {{ $account->currency === 'EUR' ? 'selected' : '' }}>EUR</option>
+                                <option value="GBP" {{ $account->currency === 'GBP' ? 'selected' : '' }}>GBP</option>
+                                <option value="AED" {{ $account->currency === 'AED' ? 'selected' : '' }}>AED</option>
+                                <option value="CHF" {{ $account->currency === 'CHF' ? 'selected' : '' }}>CHF</option>
+                              </select>
+                            </div>
+                            <div class="col-md-8 mb-3">
+                              <label class="form-label required">{{ __('Номер счета') }}</label>
+                              <input type="text" class="form-control" name="account_number" 
+                                     value="{{ old('account_number', $account->account_number) }}" required>
+                            </div>
+                          </div>
+
+                          <div class="row">
+                            <div class="col-md-6 mb-3">
+                              <label class="form-label">{{ __('IBAN') }}</label>
+                              <input type="text" class="form-control" name="iban" 
+                                     value="{{ old('iban', $account->iban) }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                              <label class="form-label">{{ __('SWIFT') }}</label>
+                              <input type="text" class="form-control" name="swift" 
+                                     value="{{ old('swift', $account->swift) }}">
+                            </div>
+                          </div>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">
+                            {{ __('Отмена') }}
+                          </button>
+                          <button type="submit" class="btn btn-primary">
+                            {{ __('Сохранить') }}
+                          </button>
+                        </div>
+                      </form>
                     </div>
                   </div>
                 </div>

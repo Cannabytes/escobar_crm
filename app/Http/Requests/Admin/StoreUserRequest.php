@@ -35,6 +35,8 @@ class StoreUserRequest extends FormRequest
                 User::ROLE_MODERATOR,
                 User::ROLE_VIEWER,
             ])],
+            'phone' => ['nullable', 'string', 'max:64'],
+            'operator' => ['nullable', 'string', 'max:50'],
         ];
     }
 
@@ -49,6 +51,8 @@ class StoreUserRequest extends FormRequest
             'password' => __('Пароль'),
             'password_confirmation' => __('Подтверждение пароля'),
             'role' => __('Роль'),
+            'phone' => __('Телефон'),
+            'operator' => __('Оператор'),
         ];
     }
 }

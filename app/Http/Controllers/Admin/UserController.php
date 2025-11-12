@@ -66,6 +66,8 @@ class UserController extends Controller
                 'email' => $request->string('email')->value(),
                 'password' => Hash::make($request->string('password')->value()),
                 'role' => $request->string('role')->value(),
+                'phone' => $request->string('phone')->trim()->value() ?: null,
+                'operator' => $request->string('operator')->trim()->value() ?: null,
             ]);
         });
 

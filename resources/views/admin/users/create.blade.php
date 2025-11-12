@@ -135,6 +135,38 @@
 
               <div class="col-md-6">
                 <div class="mb-3">
+                  <label for="phone" class="form-label">{{ __('Номер телефона') }}</label>
+                  <input
+                    type="text"
+                    id="phone"
+                    name="phone"
+                    class="form-control @error('phone') is-invalid @enderror"
+                    value="{{ old('phone') }}"
+                    placeholder="+7 (999) 123-45-67">
+                  @error('phone')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                  @enderror
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="operator" class="form-label">{{ __('Оператор') }}</label>
+                  <input
+                    type="text"
+                    id="operator"
+                    name="operator"
+                    class="form-control @error('operator') is-invalid @enderror"
+                    value="{{ old('operator') }}"
+                    placeholder="{{ __('Например: МТС, Билайн, Мегафон') }}">
+                  @error('operator')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                  @enderror
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="mb-3">
                   <label for="role" class="form-label">{{ __('Роль в системе') }}</label>
                   <select
                     id="role"

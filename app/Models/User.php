@@ -22,6 +22,7 @@ class User extends Authenticatable
         'password',
         'role',
         'phone',
+        'operator',
         'telegram',
         'whatsapp',
         'last_activity_at',
@@ -159,7 +160,7 @@ class User extends Authenticatable
     public function getAvatarUrlAttribute(): string
     {
         if ($this->avatar) {
-            return asset('storage/' . $this->avatar);
+            return url('public/storage/' . $this->avatar);
         }
 
         // Генерируем аватар с инициалами через UI Avatars

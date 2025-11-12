@@ -20,15 +20,14 @@ class LogUserActivity
         if (Auth::check()) {
             $user = Auth::user();
             
-            // Обновляем только если прошло больше 5 минут с последнего обновления
-            // Это предотвращает избыточные обновления БД
+            // Обновляем только если прошло больше 1 минуты с последнего обновления
+            // Это предотвращает избыточные обновления БД, но обеспечивает актуальность статуса
             if (
                 !$user->last_activity_at || 
-                $user->last_activity_at->diffInMinutes(now()) >= 5
+                $user->last_activity_at->diffInMinutes(now()) >= 1
             ) {
-                $user->update([
-                    'last_activity_at' => now()
-                ]);
+                // Обновляем время последней активности
+                $user->updateQuietly(['last_activity_at' => now()]);
             }
         }
 

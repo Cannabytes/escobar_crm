@@ -67,7 +67,6 @@
 @endpush
 
 @section('content')
-<div class="container-xxl flex-grow-1 container-p-y">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="fw-bold">
       <span class="text-muted fw-light">{{ __('Управление') }} / {{ __('Компании') }} /</span> {{ __('Редактирование') }}
@@ -197,7 +196,6 @@
       </div>
     </div>
   </div>
-</div>
 
 <style>
   .required:after {

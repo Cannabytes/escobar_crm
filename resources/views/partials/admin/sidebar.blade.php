@@ -1,4 +1,8 @@
-@php($currentRoute = request()->route() ? request()->route()->getName() : null)
+@php
+  $currentRoute = request()->route() ? request()->route()->getName() : null;
+  $routeCompany = request()->route('company');
+  $currentCompanyId = $routeCompany instanceof \App\Models\Company ? $routeCompany->getKey() : null;
+@endphp
 
 <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
   <div class="app-brand demo">
@@ -64,6 +68,32 @@
         <div>{{ __('Добавить компанию') }}</div>
       </a>
     </li>
+
+    <li class="menu-header small text-uppercase">
+      <span class="menu-header-text">{{ __('Мои компании') }}</span>
+    </li>
+
+    @forelse($sidebarUserCompanies ?? collect() as $sidebarCompany)
+      @php
+        $isMyCompanyActive = in_array($currentRoute, ['admin.companies.show', 'admin.companies.edit'], true)
+          && $currentCompanyId === $sidebarCompany->getKey();
+      @endphp
+      <li class="menu-item {{ $isMyCompanyActive ? 'active' : '' }}">
+        <a href="{{ route('admin.companies.show', $sidebarCompany) }}" class="menu-link">
+          <i class="menu-icon icon-base ti tabler-building-skyscraper"></i>
+          <div class="text-truncate" style="max-width: 160px;">
+            {{ $sidebarCompany->name }}
+          </div>
+        </a>
+      </li>
+    @empty
+      <li class="menu-item disabled">
+        <a href="javascript:void(0);" class="menu-link">
+          <i class="menu-icon icon-base ti tabler-briefcase-off"></i>
+          <div>{{ __('Нет закрепленных компаний') }}</div>
+        </a>
+      </li>
+    @endforelse
 
     <li class="menu-header small text-uppercase">
       <span class="menu-header-text">{{ __('Пользователи') }}</span>

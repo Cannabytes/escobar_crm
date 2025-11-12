@@ -79,7 +79,6 @@
 @endpush
 
 @section('content')
-<div class="container-xxl flex-grow-1 container-p-y">
   <h4 class="fw-bold mb-4">
     <span class="text-muted fw-light">{{ __('Управление') }} / {{ __('Компании') }} /</span> {{ __('Добавление') }}
   </h4>
@@ -195,7 +194,6 @@
       </div>
     </div>
   </div>
-</div>
 
 <style>
   .required:after {

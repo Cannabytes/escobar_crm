@@ -3,7 +3,6 @@
 @section('title', __('Компании'))
 
 @section('content')
-<div class="container-xxl flex-grow-1 container-p-y">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="fw-bold">
       <span class="text-muted fw-light">{{ __('Управление') }} /</span> {{ __('Компании') }}
@@ -12,13 +11,6 @@
       <i class="mdi mdi-plus me-1"></i> {{ __('Добавить компанию') }}
     </a>
   </div>
-
-  @if (session('status'))
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-      {{ session('status') }}
-      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-  @endif
 
   <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
@@ -123,6 +115,5 @@
       @endif
     </div>
   </div>
-</div>
 @endsection
 

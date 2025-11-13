@@ -67,8 +67,7 @@ class CompanyController extends Controller
         $company->load([
             'moderator',
             'bankAccounts',
-            'banks' => fn($query) => $query->with('details'),
-            'credentials',
+            'banks' => fn ($query) => $query->with('details'),
             'accessUsers',
         ]);
 
@@ -83,8 +82,7 @@ class CompanyController extends Controller
         $company->load([
             'moderator',
             'bankAccounts',
-            'banks' => fn($query) => $query->with('details'),
-            'credentials',
+            'banks' => fn ($query) => $query->with('details'),
             'accessUsers',
         ]);
 

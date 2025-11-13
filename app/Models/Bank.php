@@ -18,6 +18,19 @@ class Bank extends Model
         'bank_code',
         'notes',
         'sort_order',
+        'login',
+        'login_id',
+        'password',
+        'email',
+        'email_password',
+        'online_banking_url',
+        'manager_name',
+        'manager_phone',
+    ];
+
+    protected $hidden = [
+        'password',
+        'email_password',
     ];
 
     /**
@@ -34,5 +47,16 @@ class Bank extends Model
     public function details(): HasMany
     {
         return $this->hasMany(BankDetail::class)->orderBy('sort_order');
+    }
+
+    public function userCanManage(User $user): bool
+    {
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        $company = $this->company;
+
+        return $company ? $company->canUserEdit($user) : false;
     }
 }

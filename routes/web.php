@@ -5,7 +5,6 @@ use App\Http\Controllers\Admin\CompanyBankAccountController;
 use App\Http\Controllers\Admin\CompanyBankController;
 use App\Http\Controllers\Admin\CompanyBankDetailController;
 use App\Http\Controllers\Admin\CompanyController;
-use App\Http\Controllers\Admin\CompanyCredentialController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
@@ -79,12 +78,6 @@ Route::prefix('admin')->name('admin.')->middleware(['ensure.installed', 'auth'])
     Route::delete('companies/{company}/bank-details/{detail}', [CompanyBankDetailController::class, 'destroy'])
         ->name('companies.bank-details.destroy');
 
-    // Учетные данные компании
-    Route::post('companies/{company}/credentials', [CompanyCredentialController::class, 'store'])
-        ->name('companies.credentials.store');
-    Route::put('companies/{company}/credentials', [CompanyCredentialController::class, 'update'])
-        ->name('companies.credentials.update');
-
     // Лицензионные данные компании
     Route::put('companies/{company}/license', [CompanyController::class, 'updateLicense'])
         ->name('companies.license.update');
@@ -94,6 +87,10 @@ Route::prefix('admin')->name('admin.')->middleware(['ensure.installed', 'auth'])
         ->name('companies.access.store');
     Route::delete('companies/{company}/access/{access}', [CompanyAccessController::class, 'destroy'])
         ->name('companies.access.destroy');
+    
+    // Удаление главного модератора (только для супер-админа)
+    Route::delete('companies/{company}/moderator', [CompanyAccessController::class, 'removeModerator'])
+        ->name('companies.moderator.remove');
 
     // Пользователи
     Route::get('/users', [UserController::class, 'index'])->name('users.index');

@@ -3,40 +3,30 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreBankDetailRequest;
+use App\Http\Requests\Admin\UpdateBankDetailRequest;
 use App\Models\Bank;
 use App\Models\BankDetail;
 use App\Models\Company;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class CompanyBankDetailController extends Controller
 {
     /**
-     * Добавить реквізит банку
+     * Добавить реквизит банку
      */
-    public function store(Request $request, Company $company, Bank $bank): RedirectResponse
+    public function store(StoreBankDetailRequest $request, Company $company, Bank $bank): RedirectResponse
     {
-        $this->authorize('update', $company);
-
-        // Проверяем, что банк принадлежит этой компании
-        if ($bank->company_id !== $company->id) {
-            return redirect()
-                ->route('admin.companies.show', $company)
-                ->with('error', __('Банк не найден.'));
-        }
-
-        $validated = $request->validate([
-            'account_number' => 'nullable|string|max:100',
-            'iban' => 'nullable|string|max:50',
-            'swift' => 'nullable|string|max:20',
-            'currency' => 'nullable|string|max:10',
-            'status' => 'nullable|string|in:active,inactive,hold,closed',
-        ]);
+        $validated = $request->validated();
 
         $validated['bank_id'] = $bank->id;
-        $validated['sort_order'] = BankDetail::where('bank_id', $bank->id)->max('sort_order') + 1;
-        // Set default values for removed fields
-        $validated['detail_type'] = 'account_number'; // Значение по умолчанию
+
+        $maxSortOrder = BankDetail::where('bank_id', $bank->id)->max('sort_order');
+        $validated['sort_order'] = (int) ($maxSortOrder ?? 0) + 1;
+
+        $validated['detail_type'] = 'account_number';
         $validated['detail_key'] = 'account_number';
         $validated['detail_value'] = '';
         $validated['is_primary'] = false;
@@ -47,33 +37,17 @@ class CompanyBankDetailController extends Controller
 
         return redirect()
             ->route('admin.companies.show', $company)
-            ->with('status', __('Реквізит успешно добавлен.'));
+            ->with('status', __('Реквизит успешно добавлен.'));
     }
 
     /**
-     * Обновить реквізит
+     * Обновить реквизит
      */
-    public function update(Request $request, Company $company, BankDetail $detail): RedirectResponse
+    public function update(UpdateBankDetailRequest $request, Company $company, BankDetail $detail): RedirectResponse
     {
-        $this->authorize('update', $company);
+        $validated = $request->validated();
 
-        // Проверяем, що реквізит і банк належать цій компанії
-        if ($detail->bank->company_id !== $company->id) {
-            return redirect()
-                ->route('admin.companies.show', $company)
-                ->with('error', __('Реквізит не найден.'));
-        }
-
-        $validated = $request->validate([
-            'account_number' => 'nullable|string|max:100',
-            'iban' => 'nullable|string|max:50',
-            'swift' => 'nullable|string|max:20',
-            'currency' => 'nullable|string|max:10',
-            'status' => 'nullable|string|in:active,inactive,hold,closed',
-        ]);
-
-        // Keep existing values for removed fields
-        $validated['detail_type'] = $detail->detail_type; // Сохраняем существующее значение
+        $validated['detail_type'] = $detail->detail_type;
         $validated['detail_key'] = $detail->detail_key;
         $validated['detail_value'] = $detail->detail_value;
         $validated['is_primary'] = $detail->is_primary;
@@ -84,27 +58,76 @@ class CompanyBankDetailController extends Controller
 
         return redirect()
             ->route('admin.companies.show', $company)
-            ->with('status', __('Реквізит успешно обновлен.'));
+            ->with('status', __('Реквизит успешно обновлен.'));
     }
 
     /**
-     * Удалить реквізит
+     * Удалить реквизит
      */
-    public function destroy(Company $company, BankDetail $detail): RedirectResponse
+    public function destroy(Company $company, BankDetail $detail): RedirectResponse|JsonResponse
     {
-        $this->authorize('update', $company);
+        try {
+            $bank = $detail->bank;
 
-        // Проверяем, що реквізит принадлежит цій компанії
-        if ($detail->bank->company_id !== $company->id) {
+            // Проверяем, что реквизит принадлежит компании
+            if (!$bank || $bank->company_id !== $company->id) {
+                if (request()->expectsJson() || request()->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => __('Реквизит не найден.')
+                    ], 404);
+                }
+
+                return redirect()
+                    ->route('admin.companies.show', $company)
+                    ->with('error', __('Реквизит не найден.'));
+            }
+
+            // Проверяем права доступа
+            $this->authorize('manageDetails', $bank);
+
+            $detailId = $detail->id;
+            $detail->delete();
+
+            if (request()->expectsJson() || request()->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => __('Реквизит удален.'),
+                    'detail_id' => $detailId
+                ]);
+            }
+
             return redirect()
                 ->route('admin.companies.show', $company)
-                ->with('error', __('Реквізит не найден.'));
+                ->with('status', __('Реквизит удален.'));
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            if (request()->expectsJson() || request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => __('У вас нет прав для удаления этого реквизита.')
+                ], 403);
+            }
+
+            return redirect()
+                ->route('admin.companies.show', $company)
+                ->with('error', __('У вас нет прав для удаления этого реквизита.'));
+        } catch (\Exception $e) {
+            Log::error('Ошибка при удалении реквизита', [
+                'detail_id' => $detail->id ?? null,
+                'company_id' => $company->id,
+                'error' => $e->getMessage()
+            ]);
+
+            if (request()->expectsJson() || request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => __('Ошибка при удалении реквизита. Попробуйте позже.')
+                ], 500);
+            }
+
+            return redirect()
+                ->route('admin.companies.show', $company)
+                ->with('error', __('Ошибка при удалении реквизита. Попробуйте позже.'));
         }
-
-        $detail->delete();
-
-        return redirect()
-            ->route('admin.companies.show', $company)
-            ->with('status', __('Реквізит удален.'));
     }
 }

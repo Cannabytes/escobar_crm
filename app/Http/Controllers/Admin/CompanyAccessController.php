@@ -48,4 +48,23 @@ class CompanyAccessController extends Controller
             ->route('admin.companies.show', $company)
             ->with('status', __('Доступ пользователя удален.'));
     }
+
+    /**
+     * Удаление главного модератора компании.
+     */
+    public function removeModerator(Company $company): RedirectResponse
+    {
+        // Только супер-админ может удалить главного модератора
+        if (auth()->user()?->role !== \App\Models\User::ROLE_SUPER_ADMIN) {
+            abort(403, __('Только супер-администратор может удалить главного модератора.'));
+        }
+
+        $this->authorize('update', $company);
+
+        $company->update(['moderator_id' => null]);
+
+        return redirect()
+            ->route('admin.companies.show', $company)
+            ->with('status', __('Главный модератор удален.'));
+    }
 }

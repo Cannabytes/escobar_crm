@@ -1,22 +1,24 @@
 @php
   use App\Models\BankDetail;
+  use Illuminate\Support\Str;
 @endphp
 
 @extends('layouts.admin')
 
 @php
   $canEditCompany = auth()->user()?->can('update', $company);
-  $canManageCredentials = $company->canUserViewCredentials(auth()->user());
 @endphp
 
 @section('title', $company->name)
 
 @push('styles')
   <link rel="stylesheet" href="{{ url('public/vendor/vuexy/vendor/libs/select2/select2.css') }}">
+  <link rel="stylesheet" href="{{ url('public/vendor/vuexy/vendor/libs/sweetalert2/sweetalert2.css') }}">
 @endpush
 
 @push('scripts')
   <script src="{{ url('public/vendor/vuexy/vendor/libs/select2/select2.js') }}"></script>
+  <script src="{{ url('public/vendor/vuexy/vendor/libs/sweetalert2/sweetalert2.js') }}"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       if (typeof $ !== 'undefined' && $.fn.select2) {
@@ -62,6 +64,182 @@
           console.log('Modal is fully shown');
         });
       }
+
+      // AJAX удаление реквизитов банка
+      document.querySelectorAll('.delete-bank-detail-btn').forEach(button => {
+        button.addEventListener('click', async function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          const detailId = this.getAttribute('data-detail-id');
+          const bankId = this.getAttribute('data-bank-id');
+          const url = this.getAttribute('data-url');
+          const row = document.getElementById('bank-detail-row-' + detailId);
+          const buttonElement = this;
+          
+          // Подтверждение удаления через SweetAlert2 или confirm
+          let confirmed = false;
+          
+          try {
+            // Проверяем наличие SweetAlert2
+            if (typeof Swal !== 'undefined' && Swal.fire) {
+              const result = await Swal.fire({
+                title: '{{ __('Удалить реквизит?') }}',
+                text: '{{ __('Это действие нельзя отменить') }}',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: '{{ __('Да, удалить') }}',
+                cancelButtonText: '{{ __('Отмена') }}',
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                reverseButtons: true
+              });
+              confirmed = result.isConfirmed;
+            } else {
+              // Fallback на обычный confirm
+              confirmed = confirm('{{ __('Удалить реквизит?') }}');
+            }
+          } catch (error) {
+            console.error('Ошибка при показе диалога подтверждения:', error);
+            // Fallback на обычный confirm при ошибке
+            confirmed = confirm('{{ __('Удалить реквизит?') }}');
+          }
+          
+          // Блокируем кнопку во время запроса
+          const originalHTML = buttonElement.innerHTML;
+          const originalDisabled = buttonElement.disabled;
+          buttonElement.disabled = true;
+          buttonElement.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+
+          // Получаем CSRF токен
+          const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+          
+          if (!csrfToken) {
+            console.error('CSRF токен не найден');
+            buttonElement.disabled = originalDisabled;
+            buttonElement.innerHTML = originalHTML;
+            if (typeof Swal !== 'undefined' && Swal.fire) {
+              Swal.fire({
+                icon: 'error',
+                title: '{{ __('Ошибка') }}',
+                text: '{{ __('Ошибка безопасности. Обновите страницу.') }}'
+              });
+            } else {
+              alert('{{ __('Ошибка безопасности. Обновите страницу.') }}');
+            }
+            return;
+          }
+          
+          try {
+            // Отправляем AJAX-запрос
+            const response = await fetch(url, {
+              method: 'DELETE',
+              headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+              },
+              credentials: 'same-origin'
+            });
+            
+            // Пытаемся получить JSON ответ
+            let data;
+            try {
+              data = await response.json();
+            } catch (e) {
+              // Если ответ не JSON, создаем объект с сообщением
+              data = {
+                success: false,
+                message: response.status === 404 
+                  ? '{{ __('Реквизит не найден') }}'
+                  : '{{ __('Ошибка при удалении реквизита') }}'
+              };
+            }
+            
+            if (!response.ok) {
+              throw new Error(data.message || data.error || '{{ __('Ошибка при удалении реквизита') }}');
+            }
+            
+            if (data.success !== false) {
+              // Удаляем строку из таблицы с анимацией
+              if (row) {
+                row.style.transition = 'opacity 0.3s ease-out';
+                row.style.opacity = '0';
+                setTimeout(() => {
+                  row.remove();
+                  
+                  // Обновляем счетчик реквизитов в заголовке банка
+                  const tbody = row.closest('tbody');
+                  const remainingCount = tbody ? tbody.querySelectorAll('tr').length : 0;
+                  const countBadge = document.getElementById('bank-details-count-' + bankId);
+                  
+                  if (countBadge) {
+                    if (remainingCount > 0) {
+                      countBadge.innerHTML = '<i class="icon-base ti tabler-files me-1"></i>' + remainingCount;
+                    } else {
+                      countBadge.remove();
+                    }
+                  }
+                  
+                  // Проверяем, остались ли реквизиты в таблице
+                  if (tbody && tbody.querySelectorAll('tr').length === 0) {
+                    // Если реквизитов не осталось, показываем сообщение
+                    const table = tbody.closest('.table-responsive');
+                    if (table) {
+                      const emptyMessage = document.createElement('div');
+                      emptyMessage.className = 'text-center text-muted py-4';
+                      emptyMessage.innerHTML = '<i class="icon-base ti tabler-inbox"></i><p class="mt-2 mb-0">{{ __('Реквизиты не добавлены') }}</p>';
+                      table.innerHTML = '';
+                      table.appendChild(emptyMessage);
+                    }
+                  }
+                }, 300);
+              }
+
+              // Показываем уведомление об успехе
+              if (typeof Swal !== 'undefined' && Swal.fire) {
+                Swal.fire({
+                  icon: 'success',
+                  title: '{{ __('Успешно') }}',
+                  text: data.message || '{{ __('Реквизит удален') }}',
+                  timer: 2000,
+                  showConfirmButton: false,
+                  toast: true,
+                  position: 'top-end'
+                });
+              } else if (typeof toastr !== 'undefined') {
+                toastr.success(data.message || '{{ __('Реквизит удален') }}');
+              } else {
+                alert(data.message || '{{ __('Реквизит удален') }}');
+              }
+            } else {
+              throw new Error(data.message || '{{ __('Ошибка при удалении реквизита') }}');
+            }
+          } catch (error) {
+            console.error('Ошибка при удалении реквизита:', error);
+            
+            // Восстанавливаем кнопку
+            buttonElement.disabled = originalDisabled;
+            buttonElement.innerHTML = originalHTML;
+            
+            // Показываем ошибку
+            const errorMessage = error.message || '{{ __('Ошибка при удалении реквизита') }}';
+            
+            if (typeof Swal !== 'undefined' && Swal.fire) {
+              Swal.fire({
+                icon: 'error',
+                title: '{{ __('Ошибка') }}',
+                text: errorMessage
+              });
+            } else if (typeof toastr !== 'undefined') {
+              toastr.error(errorMessage);
+            } else {
+              alert(errorMessage);
+            }
+          }
+        });
+      });
     });
   </script>
 @endpush
@@ -223,15 +401,9 @@
         <div class="card-header">
           <ul class="nav nav-tabs card-header-tabs" role="tablist">
             <li class="nav-item">
-              <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#credentials-tab" 
+              <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#bank-accounts-tab" 
                       type="button" role="tab">
-                <i class="icon-base ti tabler-key me-1"></i> {{ __('Логины и пароли') }}
-              </button>
-            </li>
-            <li class="nav-item">
-              <button class="nav-link" data-bs-toggle="tab" data-bs-target="#bank-accounts-tab" 
-                      type="button" role="tab">
-                <i class="icon-base ti tabler-building-bank me-1"></i> {{ __('Реквизиты') }}
+                <i class="icon-base ti tabler-building-bank me-1"></i> {{ __('Банки и реквизиты') }}
               </button>
             </li>
             <li class="nav-item">
@@ -244,81 +416,8 @@
         </div>
         <div class="card-body">
           <div class="tab-content p-0">
-            <!-- Вкладка: Логины и пароли -->
-            <div class="tab-pane fade show active" id="credentials-tab" role="tabpanel">
-              <div class="alert alert-info" role="alert">
-                <i class="icon-base ti tabler-info-circle me-1"></i>
-                {{ __('Эти данные видны только модератору компании и супер-администратору') }}
-              </div>
-
-              @if($canManageCredentials)
-                <form action="{{ route('admin.companies.credentials.store', $company) }}" method="POST">
-                  @csrf
-                  <div class="row">
-                    <div class="col-md-6 mb-3">
-                      <label class="form-label">{{ __('Логин') }}</label>
-                      <input type="text" class="form-control" name="login" 
-                             value="{{ $company->credentials->login ?? '' }}">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                      <label class="form-label">{{ __('Логин ID') }}</label>
-                      <input type="text" class="form-control" name="login_id" 
-                             value="{{ $company->credentials->login_id ?? '' }}">
-                    </div>
-                  </div>
-
-                  <div class="mb-3">
-                    <label class="form-label">{{ __('Пароль') }}</label>
-                    <input type="text" class="form-control" name="password" 
-                           value="{{ $company->credentials->password ?? '' }}">
-                  </div>
-
-                  <div class="row">
-                    <div class="col-md-6 mb-3">
-                      <label class="form-label">{{ __('Email') }}</label>
-                      <input type="email" class="form-control" name="email" 
-                             value="{{ $company->credentials->email ?? '' }}">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                      <label class="form-label">{{ __('Пароль от email') }}</label>
-                      <input type="text" class="form-control" name="email_password" 
-                             value="{{ $company->credentials->email_password ?? '' }}">
-                    </div>
-                  </div>
-
-                  <div class="mb-3">
-                    <label class="form-label">{{ __('Ссылка на онлайн банкинг') }}</label>
-                    <input type="url" class="form-control" name="online_banking_url" 
-                           value="{{ $company->credentials->online_banking_url ?? '' }}">
-                  </div>
-
-                  <div class="row">
-                    <div class="col-md-6 mb-3">
-                      <label class="form-label">{{ __('Имя менеджера') }}</label>
-                      <input type="text" class="form-control" name="manager_name" 
-                             value="{{ $company->credentials->manager_name ?? '' }}">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                      <label class="form-label">{{ __('Номер телефона менеджера') }}</label>
-                      <input type="text" class="form-control" name="manager_phone" 
-                             value="{{ $company->credentials->manager_phone ?? '' }}">
-                    </div>
-                  </div>
-
-                  <button type="submit" class="btn btn-primary">
-                    <i class="icon-base ti tabler-device-floppy me-1"></i> {{ __('Сохранить') }}
-                  </button>
-                </form>
-              @else
-                <div class="alert alert-warning mb-0" role="alert">
-                  <i class="icon-base ti tabler-lock me-1"></i>
-                  {{ __('У вас нет прав для просмотра или изменения учетных данных этой компании.') }}
-                </div>
-              @endif
-            </div>
-
             <!-- Вкладка: Банки и реквизиты (новая структура) -->
-            <div class="tab-pane fade" id="bank-accounts-tab" role="tabpanel">
+            <div class="tab-pane fade show active" id="bank-accounts-tab" role="tabpanel">
               <div class="d-flex justify-content-between align-items-center mb-4">
                 <h6 class="mb-0">{{ __('Банки и реквизиты') }}</h6>
                 @if($canEditCompany)
@@ -334,29 +433,48 @@
                 {{ __('Структура: Банк → Реквизиты. Для одного банка можно добавить несколько реквизитов (счета, IBAN, SWIFT и т.д.)') }}
               </div>
 
-              @forelse ($company->banks as $bank)
-                <div class="card mb-3">
+            @forelse ($company->banks as $bank)
+              @php
+                $canManageBank = auth()->user()?->can('update', $bank);
+                $credentialItems = collect([
+                  ['key' => 'login', 'label' => __('Логин'), 'value' => $bank->login],
+                  ['key' => 'login_id', 'label' => __('Логин ID'), 'value' => $bank->login_id],
+                  ['key' => 'password', 'label' => __('Пароль'), 'value' => $bank->password],
+                  ['key' => 'email', 'label' => __('Email'), 'value' => $bank->email],
+                  ['key' => 'email_password', 'label' => __('Пароль от email'), 'value' => $bank->email_password],
+                  ['key' => 'online_banking_url', 'label' => __('Ссылка на онлайн-банк'), 'value' => $bank->online_banking_url],
+                  ['key' => 'manager_name', 'label' => __('Менеджер'), 'value' => $bank->manager_name],
+                  ['key' => 'manager_phone', 'label' => __('Телефон менеджера'), 'value' => $bank->manager_phone],
+                ]);
+                $hasCredentialData = $credentialItems->contains(fn ($item) => filled($item['value']));
+              @endphp
+              <div class="card mb-3">
                   <div class="card-header p-3 cursor-pointer" data-bs-toggle="collapse" data-bs-target="#bank-{{ $bank->id }}">
-                    <div class="d-flex justify-content-between align-items-center">
-                      <div class="flex-grow-1">
-                        <h6 class="mb-1">
-                          <i class="icon-base ti tabler-building-bank me-2"></i>
-                          <strong>{{ $bank->name }}</strong>
-                          @if ($bank->country)
-                            <span class="badge bg-label-secondary ms-2">{{ $bank->country }}</span>
-                          @endif
-                          @if ($bank->details->count())
-                            <span class="badge bg-label-info ms-2">
-                              <i class="icon-base ti tabler-files me-1"></i>{{ $bank->details->count() }}
-                            </span>
-                          @endif
-                        </h6>
-                        @if ($bank->notes)
-                          <small class="text-muted">{{ Str::limit($bank->notes, 60) }}</small>
-                        @endif
-                      </div>
-                      @if($canEditCompany)
-                        <div class="d-flex gap-2 ms-3">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="flex-grow-1">
+                    <h6 class="mb-1">
+                      <i class="icon-base ti tabler-building-bank me-2"></i>
+                      <strong>{{ $bank->name }}</strong>
+                      @if ($bank->country)
+                        <span class="badge bg-label-secondary ms-2">{{ $bank->country }}</span>
+                      @endif
+                      @if ($bank->details->count())
+                        <span class="badge bg-label-info ms-2" id="bank-details-count-{{ $bank->id }}">
+                          <i class="icon-base ti tabler-files me-1"></i>{{ $bank->details->count() }}
+                        </span>
+                      @endif
+                      @if($hasCredentialData)
+                        <span class="badge bg-label-success ms-2">
+                          <i class="icon-base ti tabler-key me-1"></i>{{ __('Доступы заполнены') }}
+                        </span>
+                      @endif
+                    </h6>
+                    @if ($bank->notes)
+                      <small class="text-muted">{{ Str::limit($bank->notes, 120) }}</small>
+                    @endif
+                  </div>
+                  @if($canManageBank)
+                    <div class="d-flex gap-2 ms-3">
                           <button type="button" class="btn btn-sm btn-icon btn-label-success" 
                                   data-bs-toggle="modal" 
                                   data-bs-target="#addBankDetailModal{{ $bank->id }}"
@@ -385,26 +503,103 @@
                   </div>
 
                   <!-- Реквізити банку (з разворотом/згортанням) -->
-                  <div class="collapse" id="bank-{{ $bank->id }}">
-                    <div class="card-body">
-                      @if ($bank->details->count())
+                <div class="collapse" id="bank-{{ $bank->id }}">
+                  <div class="card-body">
+                    <div class="mb-4">
+                      <div class="border rounded p-3">
+                        <div class="d-flex align-items-center mb-3">
+                          <i class="icon-base ti tabler-key me-2 text-primary"></i>
+                          <h6 class="mb-0">{{ __('Доступ к онлайн-банку') }}</h6>
+                        </div>
+                        @if($canManageBank)
+                          @if($hasCredentialData)
+                            @php
+                              $itemsArray = $credentialItems->filter(fn($item) => filled($item['value']))->values()->all();
+                              $halfCount = ceil(count($itemsArray) / 2);
+                              $leftColumn = array_slice($itemsArray, 0, $halfCount);
+                              $rightColumn = array_slice($itemsArray, $halfCount);
+                            @endphp
+                            <div class="row">
+                              <div class="col-md-6">
+                                @foreach ($leftColumn as $item)
+                                  <div class="mb-3">
+                                    <small class="text-muted d-block mb-1">{{ $item['label'] }}</small>
+                                    <div class="fw-medium">
+                                      @switch($item['key'])
+                                        @case('online_banking_url')
+                                          <a href="{{ $item['value'] }}" target="_blank" rel="noopener" class="text-break">
+                                            {{ $item['value'] }}
+                                            <i class="icon-base ti tabler-external-link ms-1"></i>
+                                          </a>
+                                          @break
+                                        @case('email')
+                                          <a href="mailto:{{ $item['value'] }}">{{ $item['value'] }}</a>
+                                          @break
+                                        @case('manager_phone')
+                                          <a href="tel:{{ preg_replace('/\D+/', '', $item['value']) }}">{{ $item['value'] }}</a>
+                                          @break
+                                        @default
+                                          <span class="font-monospace text-break">{{ $item['value'] }}</span>
+                                      @endswitch
+                                    </div>
+                                  </div>
+                                @endforeach
+                              </div>
+                              <div class="col-md-6">
+                                @foreach ($rightColumn as $item)
+                                  <div class="mb-3">
+                                    <small class="text-muted d-block mb-1">{{ $item['label'] }}</small>
+                                    <div class="fw-medium">
+                                      @switch($item['key'])
+                                        @case('online_banking_url')
+                                          <a href="{{ $item['value'] }}" target="_blank" rel="noopener" class="text-break">
+                                            {{ $item['value'] }}
+                                            <i class="icon-base ti tabler-external-link ms-1"></i>
+                                          </a>
+                                          @break
+                                        @case('email')
+                                          <a href="mailto:{{ $item['value'] }}">{{ $item['value'] }}</a>
+                                          @break
+                                        @case('manager_phone')
+                                          <a href="tel:{{ preg_replace('/\D+/', '', $item['value']) }}">{{ $item['value'] }}</a>
+                                          @break
+                                        @default
+                                          <span class="font-monospace text-break">{{ $item['value'] }}</span>
+                                      @endswitch
+                                    </div>
+                                  </div>
+                                @endforeach
+                              </div>
+                            </div>
+                          @else
+                            <p class="text-muted small mb-0">{{ __('Данные не заполнены') }}</p>
+                          @endif
+                        @else
+                          <div class="alert alert-warning small mb-0">
+                            <i class="icon-base ti табler-lock me-1"></i>{{ __('У вас нет доступа к данным этого банка.') }}
+                          </div>
+                        @endif
+                      </div>
+                    </div>
+
+                    @if ($bank->details->count())
                         <div class="table-responsive">
                           <table class="table table-sm table-hover mb-0">
                             <thead class="table-light">
                               <tr>
                                 <th>{{ __('Валюта') }}</th>
-                                <th>{{ __('ACCOUNT NUMBER') }}</th>
+                                <th>{{ __('ACCOUNT') }}</th>
                                 <th>{{ __('IBAN') }}</th>
                                 <th>{{ __('SWIFT') }}</th>
                                 <th>{{ __('Статус') }}</th>
-                                @if($canEditCompany)
+                                @if($canManageBank)
                                   <th class="text-end">{{ __('Действия') }}</th>
                                 @endif
                               </tr>
                             </thead>
                             <tbody>
                               @foreach ($bank->details as $detail)
-                                <tr>
+                                <tr id="bank-detail-row-{{ $detail->id }}">
                                   <td>{{ $detail->currency ?? '—' }}</td>
                                   <td>{{ $detail->account_number ?? '—' }}</td>
                                   <td>{{ $detail->iban ?? '—' }}</td>
@@ -423,7 +618,7 @@
                                       {{ BankDetail::getStatuses()[$detail->status] ?? $detail->status }}
                                     </span>
                                   </td>
-                                  @if($canEditCompany)
+                                  @if($canManageBank)
                                     <td class="text-end">
                                       <button type="button" class="btn btn-sm btn-icon btn-label-primary" 
                                               data-bs-toggle="modal" 
@@ -431,15 +626,15 @@
                                               title="{{ __('Редактировать') }}">
                                         <i class="ti tabler-pencil"></i>
                                       </button>
-                                      <form action="{{ route('admin.companies.bank-details.destroy', [$company, $detail]) }}" 
-                                            method="POST" class="d-inline" 
-                                            onsubmit="return confirm('{{ __('Удалить реквизит?') }}')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-icon btn-label-danger" title="{{ __('Удалить') }}">
-                                          <i class="icon-base ti tabler-trash"></i>
-                                        </button>
-                                      </form>
+                                      <button type="button" 
+                                              class="btn btn-sm btn-icon btn-label-danger waves-effect delete-bank-detail-btn" 
+                                              data-detail-id="{{ $detail->id }}"
+                                              data-bank-id="{{ $bank->id }}"
+                                              data-company-id="{{ $company->id }}"
+                                              data-url="{{ route('admin.companies.bank-details.destroy', [$company, $detail]) }}"
+                                              title="{{ __('Удалить') }}">
+                                        <i class="icon-base ti tabler-trash"></i>
+                                      </button>
                                     </td>
                                   @endif
                                 </tr>
@@ -456,10 +651,10 @@
                     </div>
                   </div>
 
-                  @if($canEditCompany)
+                @if($canManageBank)
                     <!-- Модал: Редагування банку -->
-                    <div class="modal fade" id="editBankModal{{ $bank->id }}" tabindex="-1">
-                      <div class="modal-dialog">
+                  <div class="modal fade" id="editBankModal{{ $bank->id }}" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
                         <div class="modal-content">
                           <form action="{{ route('admin.companies.banks.update', [$company, $bank]) }}" method="POST">
                             @csrf
@@ -484,7 +679,7 @@
                                 <div class="col-md-6 mb-3">
                                   <label class="form-label">{{ __('Код банка') }}</label>
                                   <input type="text" class="form-control" name="bank_code" 
-                                         value="{{ old('bank_code', $bank->bank_code) }}" placeholder="MFI, SWIFT тощо">
+                                         value="{{ old('bank_code', $bank->bank_code) }}" placeholder="MFI, SWIFT">
                                 </div>
                               </div>
 
@@ -492,6 +687,53 @@
                                 <label class="form-label">{{ __('Примечания') }}</label>
                                 <textarea class="form-control" name="notes" rows="3">{{ old('notes', $bank->notes) }}</textarea>
                               </div>
+
+                              <hr>
+                              <h6 class="text-uppercase text-muted small mb-3">{{ __('Доступы и контакты') }}</h6>
+                              <div class="row">
+                                <div class="col-md-6 mb-3">
+                                  <label class="form-label">{{ __('Логин') }}</label>
+                                  <input type="text" class="form-control" name="login" value="{{ old('login', $bank->login) }}">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                  <label class="form-label">{{ __('Логин ID') }}</label>
+                                  <input type="text" class="form-control" name="login_id" value="{{ old('login_id', $bank->login_id) }}">
+                                </div>
+                              </div>
+                              <div class="row">
+                                <div class="col-md-6 mb-3">
+                                  <label class="form-label">{{ __('Пароль') }}</label>
+                                  <input type="text" class="form-control" name="password" value="{{ old('password', $bank->password) }}">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                  <label class="form-label">{{ __('Email') }}</label>
+                                  <input type="email" class="form-control" name="email" value="{{ old('email', $bank->email) }}">
+                                </div>
+                              </div>
+                              <div class="row">
+                                <div class="col-md-6 mb-3">
+                                  <label class="form-label">{{ __('Пароль от email') }}</label>
+                                  <input type="text" class="form-control" name="email_password" value="{{ old('email_password', $bank->email_password) }}">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                  <label class="form-label">{{ __('Ссылка на онлайн-банк') }}</label>
+                                  <input type="url" class="form-control" name="online_banking_url" 
+                                         value="{{ old('online_banking_url', $bank->online_banking_url) }}">
+                                </div>
+                              </div>
+                              <div class="row">
+                                <div class="col-md-6 mb-3">
+                                  <label class="form-label">{{ __('Имя менеджера') }}</label>
+                                  <input type="text" class="form-control" name="manager_name" 
+                                         value="{{ old('manager_name', $bank->manager_name) }}">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                  <label class="form-label">{{ __('Телефон менеджера') }}</label>
+                                  <input type="text" class="form-control" name="manager_phone" 
+                                         value="{{ old('manager_phone', $bank->manager_phone) }}">
+                                </div>
+                              </div>
+
                             </div>
                             <div class="modal-footer">
                               <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">
@@ -539,7 +781,7 @@
                               </div>
 
                               <div class="mb-3">
-                                <label class="form-label">{{ __('ACCOUNT NUMBER') }}</label>
+                                <label class="form-label">{{ __('ACCOUNT') }}</label>
                                 <input type="text" class="form-control" name="account_number" 
                                        value="{{ old('account_number') }}" 
                                        placeholder="{{ __('Введите номер счета') }}">
@@ -610,7 +852,7 @@
                               </div>
 
                               <div class="mb-3">
-                                <label class="form-label">{{ __('ACCOUNT NUMBER') }}</label>
+                                <label class="form-label">{{ __('ACCOUNT') }}</label>
                                 <input type="text" class="form-control" name="account_number" 
                                        value="{{ old('account_number', $detail->account_number) }}" 
                                        placeholder="{{ __('Введите номер счета') }}">
@@ -657,10 +899,13 @@
             <div class="tab-pane fade" id="access-tab" role="tabpanel">
               <div class="alert alert-info mb-3">
                 <i class="icon-base ti tabler-info-circle me-1"></i>
-                {{ __('В этом разделе супер-администратор может добавлять модераторов, которые смогут изменять данные компании') }}
+                {{ __('В этом разделе отображаются все модераторы компании: главный и дополнительные') }}
               </div>
               <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="mb-0">{{ __('Модераторы с доступом') }} ({{ $company->accessUsers->count() }})</h6>
+                @php
+                  $totalModerators = ($company->moderator ? 1 : 0) + $company->accessUsers->count();
+                @endphp
+                <h6 class="mb-0">{{ __('Модераторы с доступом') }} ({{ $totalModerators }})</h6>
                 @if($canEditCompany)
                   <button type="button" class="btn btn-sm btn-primary" 
                           data-bs-toggle="modal" data-bs-target="#addAccessModal">
@@ -669,7 +914,7 @@
                 @endif
               </div>
 
-              @if($company->accessUsers->count() > 0)
+              @if($company->moderator || $company->accessUsers->count() > 0)
                 <div class="table-responsive">
                   <table class="table table-hover">
                     <thead class="table-light">
@@ -684,6 +929,56 @@
                       </tr>
                     </thead>
                     <tbody>
+                      @if($company->moderator)
+                        <tr>
+                          <td>
+                            <div class="d-flex align-items-center">
+                              @if ($company->moderator->avatar)
+                                <img src="{{ $company->moderator->avatar_url }}" alt="{{ $company->moderator->name }}" 
+                                     class="rounded-circle me-2" style="width: 32px; height: 32px; object-fit: cover;">
+                              @else
+                                <div class="avatar-initial rounded-circle bg-label-primary me-2" 
+                                     style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 14px;">
+                                  {{ strtoupper(substr($company->moderator->name, 0, 1)) }}
+                                </div>
+                              @endif
+                              <div>
+                                <strong>{{ $company->moderator->name }}</strong>
+                                <span class="badge bg-label-warning ms-1">{{ __('Главный') }}</span>
+                                @if($company->moderator->id === auth()->id())
+                                  <span class="badge bg-label-info ms-1">{{ __('Вы') }}</span>
+                                @endif
+                              </div>
+                            </div>
+                          </td>
+                          <td>{{ $company->moderator->email }}</td>
+                          <td>
+                            <span class="badge bg-label-success">
+                              <i class="icon-base ti tabler-pencil me-1"></i>{{ __('Полный доступ') }}
+                            </span>
+                          </td>
+                          <td>
+                            <small class="text-muted">{{ $company->created_at->format('d.m.Y H:i') }}</small>
+                          </td>
+                          @if($canEditCompany)
+                            <td class="text-end">
+                              @if(auth()->user()?->role === \App\Models\User::ROLE_SUPER_ADMIN)
+                                <form action="{{ route('admin.companies.moderator.remove', $company) }}" 
+                                      method="POST" class="d-inline" 
+                                      onsubmit="return confirm('{{ __('Удалить главного модератора?') }}')">
+                                  @csrf
+                                  @method('DELETE')
+                                  <button type="submit" class="btn btn-sm btn-icon btn-label-danger" title="{{ __('Удалить главного модератора') }}">
+                                    <i class="icon-base ti tabler-trash"></i>
+                                  </button>
+                                </form>
+                              @else
+                                <span class="text-muted small">{{ __('Главный модератор') }}</span>
+                              @endif
+                            </td>
+                          @endif
+                        </tr>
+                      @endif
                       @foreach ($company->accessUsers as $user)
                         <tr>
                           <td>
@@ -740,7 +1035,7 @@
               @else
                 <div class="text-center py-6">
                   <i class="icon-base ti tabler-users-off" style="font-size: 64px; color: #ccc;"></i>
-                  <p class="mt-3 text-muted">{{ __('Дополнительные модераторы не добавлены') }}</p>
+                  <p class="mt-3 text-muted">{{ __('Модераторы не назначены') }}</p>
                   <p class="small text-muted mb-3">{{ __('Нажмите кнопку выше, чтобы добавить модератора с доступом к компании') }}</p>
                   @if($canEditCompany)
                     <button type="button" class="btn btn-primary" 
@@ -934,7 +1229,7 @@
 @if($canEditCompany)
 <!-- Modal: Добавить банк (новая структура) -->
 <div class="modal fade" id="addBankModal" tabindex="-1">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <form action="{{ route('admin.companies.banks.store', $company) }}" method="POST">
         @csrf
@@ -958,15 +1253,59 @@
             <div class="col-md-6 mb-3">
               <label class="form-label">{{ __('Код банка') }}</label>
               <input type="text" class="form-control" name="bank_code" 
-                     placeholder="MFI, SWIFT код">
+                     placeholder="MFI, SWIFT">
             </div>
           </div>
 
           <div class="mb-3">
             <label class="form-label">{{ __('Примечания') }}</label>
             <textarea class="form-control" name="notes" rows="3" 
-                      placeholder="Дополнительная информация о банке"></textarea>
+                      placeholder="{{ __('Дополнительная информация о банке') }}"></textarea>
           </div>
+
+          <hr>
+          <h6 class="text-uppercase text-muted small mb-3">{{ __('Доступы и контакты') }}</h6>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">{{ __('Логин') }}</label>
+              <input type="text" class="form-control" name="login">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">{{ __('Логин ID') }}</label>
+              <input type="text" class="form-control" name="login_id">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">{{ __('Пароль') }}</label>
+              <input type="text" class="form-control" name="password">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">{{ __('Email') }}</label>
+              <input type="email" class="form-control" name="email">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">{{ __('Пароль от email') }}</label>
+              <input type="text" class="form-control" name="email_password">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">{{ __('Ссылка на онлайн-банк') }}</label>
+              <input type="url" class="form-control" name="online_banking_url">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">{{ __('Имя менеджера') }}</label>
+              <input type="text" class="form-control" name="manager_name">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">{{ __('Телефон менеджера') }}</label>
+              <input type="text" class="form-control" name="manager_phone">
+            </div>
+          </div>
+
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">

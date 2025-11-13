@@ -128,8 +128,12 @@ Route::prefix('admin')->name('admin.')->middleware(['ensure.installed', 'auth'])
     Route::get('chat', [ChatController::class, 'index'])->name('chat.index');
     Route::get('chat/rooms', [ChatController::class, 'rooms'])->name('chat.rooms.index');
     Route::post('chat/rooms', [ChatController::class, 'storeRoom'])->name('chat.rooms.store');
+    Route::put('chat/rooms/{room}', [ChatController::class, 'updateRoom'])->name('chat.rooms.update');
+    Route::delete('chat/rooms/{room}', [ChatController::class, 'deleteRoom'])->name('chat.rooms.delete');
+    Route::delete('chat/rooms/{room}/messages', [ChatController::class, 'clearRoomMessages'])->name('chat.rooms.messages.clear');
     Route::get('chat/rooms/{room}/messages', [ChatController::class, 'messages'])->name('chat.rooms.messages.index');
     Route::post('chat/rooms/{room}/messages', [ChatController::class, 'storeMessage'])->name('chat.rooms.messages.store');
+    Route::post('chat/rooms/{room}/read', [ChatController::class, 'markRoomAsRead'])->name('chat.rooms.read');
     Route::get('chat/users', [ChatController::class, 'users'])->name('chat.users.index');
     Route::get('chat/users/search', [ChatController::class, 'searchUsers'])->name('chat.users.search');
 });

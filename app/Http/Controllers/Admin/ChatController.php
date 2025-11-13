@@ -20,6 +20,7 @@ class ChatController extends Controller
     {
         $user = $request->user();
 
+        // Получаем все публичные чаты + приватные чаты пользователя
         $rooms = ChatRoom::query()
             ->with([
                 'participants:id,name,avatar',
@@ -43,6 +44,7 @@ class ChatController extends Controller
     {
         $user = $request->user();
 
+        // Получаем все публичные чаты + приватные чаты пользователя
         $rooms = ChatRoom::query()
             ->with([
                 'participants:id,name,avatar',
@@ -144,18 +146,54 @@ class ChatController extends Controller
         $perPage = (int) $request->integer('per_page', 50);
         $perPage = $perPage > 100 ? 100 : ($perPage < 10 ? 10 : $perPage);
 
-        $messages = $room->messages()
+        $after = $request->input('after');
+        $query = $room->messages()
             ->with('user:id,name,avatar')
-            ->orderBy('created_at')
-            ->paginate($perPage);
+            ->orderByDesc('created_at');
+
+        // If 'after' timestamp is provided, get only newer messages
+        if ($after) {
+            $query->where('created_at', '>', $after);
+        }
+
+        $messages = $query->paginate($perPage);
+
+        $transformedMessages = $messages->getCollection()
+            ->map(fn (ChatMessage $message) => $this->transformMessage($message, $user))
+            ->reverse()
+            ->values();
+
+        \Log::info('CHAT MESSAGES RESPONSE:', [
+            'room_id' => $room->id,
+            'total_messages' => $transformedMessages->count(),
+            'current_user_id' => $user->id,
+            'messages' => $transformedMessages->map(function ($msg) {
+                return [
+                    'id' => $msg['id'],
+                    'user_id' => $msg['user']['id'] ?? null,
+                    'user_name' => $msg['user']['name'] ?? null,
+                    'is_mine' => $msg['is_mine'],
+                    'body' => substr($msg['body'], 0, 50)
+                ];
+            })->toArray()
+        ]);
+
+        // Получаем время последнего прочтения для текущего пользователя
+        $lastReadAt = $room->participants()
+            ->where('user_id', $user->id)
+            ->first()
+            ?->pivot
+            ?->last_read_at;
 
         return response()->json([
-            'data' => $messages->getCollection()->map(fn (ChatMessage $message) => $this->transformMessage($message, $user)),
+            'data' => $transformedMessages,
             'meta' => [
                 'current_page' => $messages->currentPage(),
                 'last_page' => $messages->lastPage(),
                 'per_page' => $messages->perPage(),
                 'total' => $messages->total(),
+                'has_new' => $messages->total() > 0,
+                'last_read_at' => optional($lastReadAt)->toIso8601String(),
             ],
         ]);
     }
@@ -186,12 +224,204 @@ class ChatController extends Controller
         ], Response::HTTP_CREATED);
     }
 
+    public function markRoomAsRead(ChatRoom $room): JsonResponse
+    {
+        $user = request()->user();
+        $this->ensureRoomAccess($room, $user);
+
+        // Обновляем время последнего прочтения
+        $room->participants()->updateExistingPivot($user->id, [
+            'last_read_at' => now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => __('Чат отмечен как прочитанный'),
+        ]);
+    }
+
+    public function updateRoom(ChatRoom $room): JsonResponse
+    {
+        $user = request()->user();
+
+        // Только создатель или администратор может редактировать публичные чаты
+        if ($room->type === ChatRoom::TYPE_PUBLIC && $room->created_by !== $user->id && !$user->is_admin) {
+            abort(403, __('У вас нет прав на редактирование этого чата'));
+        }
+
+        $data = request()->validate([
+            'name' => 'required|string|max:120',
+        ]);
+
+        $room->update([
+            'name' => trim($data['name']),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => $this->transformRoom($room->load(['participants:id,name,avatar', 'lastMessage.user:id,name,avatar'])->loadCount('messages'), $user),
+            'message' => __('Чат переименован'),
+        ]);
+    }
+
+    public function clearRoomMessages(ChatRoom $room): JsonResponse
+    {
+        $user = request()->user();
+
+        // Только создатель или администратор может очищать публичные чаты
+        if ($room->type === ChatRoom::TYPE_PUBLIC && $room->created_by !== $user->id && !$user->is_admin) {
+            abort(403, __('У вас нет прав на очистку этого чата'));
+        }
+
+        $room->messages()->delete();
+
+        // Создаем системное сообщение о очистке
+        $room->messages()->create([
+            'user_id' => $user->id,
+            'body' => __('Чат был очищен'),
+            'is_system' => true,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => __('Все сообщения удалены'),
+        ]);
+    }
+
+    public function deleteRoom(ChatRoom $room): JsonResponse
+    {
+        $user = request()->user();
+
+        // Только создатель или администратор может удалять публичные чаты
+        if ($room->type === ChatRoom::TYPE_PUBLIC && $room->created_by !== $user->id && !$user->is_admin) {
+            abort(403, __('У вас нет прав на удаление этого чата'));
+        }
+
+        $room->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => __('Чат удален'),
+        ]);
+    }
+
     public function users(Request $request): JsonResponse
     {
         $user = $request->user();
+        $search = (string) $request->input('q', '');
+
+        $users = User::query()
+            ->with('roleModel:id,name,slug')
+            ->where('id', '!=', $user->id)
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', '%' . $search . '%')
+                        ->orWhere('email', 'like', '%' . $search . '%');
+                });
+            })
+            ->orderBy('name')
+            ->get(['id', 'name', 'email', 'avatar', 'role_id', 'last_activity_at']);
+
+        $result = $users->map(function (User $contact) use ($user) {
+            // Определение статуса пользователя
+            $status = 'offline';
+            if ($contact->last_activity_at && $contact->last_activity_at->diffInMinutes(now()) < 5) {
+                $status = 'online';
+            } elseif ($contact->last_activity_at && $contact->last_activity_at->diffInMinutes(now()) < 30) {
+                $status = 'away';
+            }
+
+            // Проверяем, есть ли комната между пользователями
+            $room = ChatRoom::query()
+                ->where('type', ChatRoom::TYPE_PRIVATE)
+                ->whereHas('participants', fn ($q) => $q->where('user_id', $user->id))
+                ->whereHas('participants', fn ($q) => $q->where('user_id', $contact->id))
+                ->with(['lastMessage.user:id,name,avatar'])
+                ->first();
+
+            $hasRoom = $room !== null;
+            $lastMessage = $room?->lastMessage;
+
+            // Подсчет непрочитанных сообщений
+            $unreadCount = 0;
+            $lastMessageText = '';
+            if ($room) {
+                // Получаем время последнего прочтения
+                $lastReadAt = $room->participants()
+                    ->where('user_id', $user->id)
+                    ->first()
+                    ?->pivot
+                    ?->last_read_at;
+
+                // Считаем непрочитанные сообщения после последнего прочтения
+                $unreadCount = $room->messages()
+                    ->where('user_id', '!=', $user->id)
+                    ->when($lastReadAt, fn ($q) => $q->where('created_at', '>', $lastReadAt))
+                    ->count();
+
+                if ($lastMessage) {
+                    $lastMessageText = $lastMessage->body;
+                    // Сокращаем длинные сообщения
+                    if (strlen($lastMessageText) > 50) {
+                        $lastMessageText = substr($lastMessageText, 0, 47) . '...';
+                    }
+                }
+            }
+
+            return [
+                'id' => $contact->id,
+                'name' => $contact->name,
+                'email' => $contact->email,
+                'avatar_url' => $contact->avatar_url,
+                'role' => $contact->roleModel?->name ?? __('Пользователь'),
+                'status' => $status,
+                'has_room' => $hasRoom,
+                'room' => $room ? $this->transformRoom($room, $user) : null,
+                'last_message_at' => $lastMessage?->created_at?->toIso8601String(),
+                'unread_count' => $unreadCount,
+                'last_message_text' => $lastMessageText,
+            ];
+        })->sort(function ($a, $b) {
+            // Сортировка: сначала контакты с непрочитанными сообщениями, затем по времени последнего сообщения
+            if ($a['unread_count'] > 0 && $b['unread_count'] == 0) {
+                return -1;
+            }
+            if ($a['unread_count'] == 0 && $b['unread_count'] > 0) {
+                return 1;
+            }
+            if ($a['last_message_at'] && $b['last_message_at']) {
+                return strtotime($b['last_message_at']) - strtotime($a['last_message_at']);
+            }
+            if ($a['last_message_at']) {
+                return -1;
+            }
+            if ($b['last_message_at']) {
+                return 1;
+            }
+            return strcmp($a['name'], $b['name']);
+        })->values();
+
+        \Log::info('CHAT USERS RESPONSE:', [
+            'total_users' => $result->count(),
+            'users' => $result->map(function ($user) {
+                return [
+                    'id' => $user['id'],
+                    'name' => $user['name'],
+                    'has_room' => $user['has_room'],
+                    'last_message_at' => $user['last_message_at'],
+                ];
+            })->toArray()
+        ]);
+
+        // Логируем результат сортировки
+        \Log::info('Chat contacts sorted:', $result->map(fn($c) => [
+            'name' => $c['name'],
+            'has_room' => $c['has_room'],
+            'last_message_at' => $c['last_message_at']
+        ])->toArray());
 
         return response()->json([
-            'data' => $this->buildPrivateUsers($user),
+            'data' => $result,
         ]);
     }
 

@@ -80,24 +80,15 @@
         </div>
 
         <div class="my-6">
-          <div class="d-flex justify-content-between">
-            <div class="form-check mb-0 ms-2">
-              <input type="checkbox" id="remember" name="remember" class="form-check-input" {{ old('remember') ? 'checked' : '' }}>
-              <label class="form-check-label" for="remember">{{ __('Запомнить меня') }}</label>
-            </div>
-            <span class="text-muted small">{{ __('Забыли пароль? Обратитесь к администратору.') }}</span>
+          <div class="form-check mb-0 ms-2">
+            <input type="checkbox" id="remember" name="remember" class="form-check-input" {{ old('remember') ? 'checked' : '' }}>
+            <label class="form-check-label" for="remember">{{ __('Запомнить меня') }}</label>
           </div>
         </div>
 
         <button type="submit" class="btn btn-primary d-grid w-100">{{ __('Войти') }}</button>
       </form>
 
-      <p class="text-center mb-0">
-        <span>{{ __('Нет аккаунта?') }}</span>
-        <a href="{{ route('register') }}">
-          <span>{{ __('Создать учетную запись') }}</span>
-        </a>
-      </p>
     </div>
   </div>
 @endsection

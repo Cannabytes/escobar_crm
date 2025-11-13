@@ -120,71 +120,10 @@
                 </h6>
                 <p class="text-muted mb-4">{{ __('Выберите разрешения, которые будут доступны пользователям с этой ролью') }}</p>
 
-                @if (empty($permissionGroups))
-                  <div class="alert alert-warning">
-                    <i class="icon-base ti tabler-alert-triangle me-2"></i>
-                    {{ __('Разрешения не найдены. Выполните сидер PermissionSeeder.') }}
-                  </div>
-                @else
-                  <div class="accordion" id="permissionsAccordion">
-                    @foreach ($permissionGroups as $groupId => $data)
-                      @php
-                        $group = $data['group'];
-                        $permissions = $data['permissions'];
-                      @endphp
-                      <div class="accordion-item">
-                        <h2 class="accordion-header" id="heading{{ $groupId }}">
-                          <button
-                            class="accordion-button {{ $loop->first ? '' : 'collapsed' }}"
-                            type="button"
-                            data-bs-toggle="collapse"
-                            data-bs-target="#collapse{{ $groupId }}"
-                            aria-expanded="{{ $loop->first ? 'true' : 'false' }}"
-                            aria-controls="collapse{{ $groupId }}">
-                            <i class="icon-base ti tabler-shield me-2"></i>
-                            <strong>{{ $group->name }}</strong>
-                            @if ($group->description)
-                              <span class="text-muted ms-2 small">{{ $group->description }}</span>
-                            @endif
-                            <span class="badge bg-label-secondary ms-auto me-2">{{ $permissions->count() }}</span>
-                          </button>
-                        </h2>
-                        <div
-                          id="collapse{{ $groupId }}"
-                          class="accordion-collapse collapse {{ $loop->first ? 'show' : '' }}"
-                          aria-labelledby="heading{{ $groupId }}"
-                          data-bs-parent="#permissionsAccordion">
-                          <div class="accordion-body">
-                            <div class="row g-3">
-                              @foreach ($permissions as $permission)
-                                <div class="col-md-6">
-                                  <div class="form-check">
-                                    <input
-                                      class="form-check-input"
-                                      type="checkbox"
-                                      name="permissions[]"
-                                      value="{{ $permission->id }}"
-                                      id="permission{{ $permission->id }}"
-                                      {{ in_array($permission->id, old('permissions', $rolePermissionIds)) ? 'checked' : '' }}>
-                                    <label class="form-check-label" for="permission{{ $permission->id }}">
-                                      <strong>{{ $permission->name }}</strong>
-                                      <span class="badge bg-label-{{ $permission->type === 'view' ? 'info' : ($permission->type === 'create' ? 'success' : ($permission->type === 'edit' ? 'warning' : ($permission->type === 'delete' ? 'danger' : 'primary'))) }} ms-1">
-                                        {{ $permission->getTypeLabel() }}
-                                      </span>
-                                      @if ($permission->description)
-                                        <div class="text-muted small">{{ $permission->description }}</div>
-                                      @endif
-                                    </label>
-                                  </div>
-                                </div>
-                              @endforeach
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    @endforeach
-                  </div>
-                @endif
+                @include('admin.roles.partials.permissions-matrix', [
+                  'permissionGroups' => $permissionGroups,
+                  'selectedPermissions' => old('permissions', $rolePermissionIds),
+                ])
               </div>
             </div>
           </div>

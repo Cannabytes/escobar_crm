@@ -14,14 +14,57 @@
 
     @php
       $user = auth()->user();
-      $roleLabels = [
-        \App\Models\User::ROLE_SUPER_ADMIN => __('Супер админ'),
-        \App\Models\User::ROLE_MODERATOR => __('Модератор'),
-        \App\Models\User::ROLE_VIEWER => __('Пользователь'),
-      ];
+      $userRoleName = null;
+
+      if ($user?->roleModel) {
+          $userRoleName = $user->roleModel->name;
+      } elseif ($user?->isSuperAdmin()) {
+          $userRoleName = __('Супер администратор');
+      }
     @endphp
 
     <ul class="navbar-nav flex-row align-items-center ms-auto">
+      @php
+        $updatedAt = $currencyTicker['updated_at'] ?? null;
+        $updatedDiff = null;
+
+        if ($updatedAt instanceof \Carbon\CarbonInterface) {
+          $updatedDiff = $updatedAt
+            ->locale(app()->getLocale())
+            ->diffForHumans(null, [
+              'parts' => 2,
+              'short' => true,
+              'minimumUnit' => 'second',
+            ]);
+        }
+      @endphp
+      @if (! empty($currencyTicker['rates'] ?? null))
+        <li class="nav-item me-3">
+          <div class="d-flex flex-column align-items-end text-muted small text-end">
+            <div class="d-flex align-items-center flex-wrap gap-3">
+              @foreach ($currencyTicker['rates'] as $rate)
+                @php
+                  $displayValue = $rate['per_unit'] ?? $rate['value'];
+                @endphp
+                <span class="d-inline-flex align-items-center">
+                  <span class="fw-semibold text-body">{{ $rate['code'] }}</span>
+                  <span class="ms-1">
+                    {{ $displayValue !== null ? number_format($displayValue, 4, ',', ' ') : '—' }}
+                  </span>
+                  @if ($displayValue !== null)
+                    <span class="ms-1">{{ __('₽') }}</span>
+                  @endif
+                </span>
+              @endforeach
+            </div>
+            @if ($updatedDiff)
+              <div class="mt-1">
+                {{ __('Обновлено :time назад', ['time' => $updatedDiff]) }}
+              </div>
+            @endif
+          </div>
+        </li>
+      @endif
       @if (! empty($supportedLocales))
         <li class="nav-item dropdown dropdown-language me-3 me-xl-2">
           <a class="nav-link btn btn-text-secondary dropdown-toggle px-2 d-flex align-items-center"
@@ -48,7 +91,7 @@
       @if ($user)
         <li class="nav-item lh-1 me-3">
           <span class="badge bg-label-primary rounded-pill text-uppercase">
-            {{ $roleLabels[$user->role] ?? __('Пользователь') }}
+            {{ $userRoleName ?? __('Пользователь') }}
           </span>
         </li>
       @endif

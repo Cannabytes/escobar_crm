@@ -98,5 +98,29 @@ class BankCredentialsAccessTest extends TestCase
         $this->assertSame('View Only Bank', $bank->name);
         $this->assertNotSame('DE', $bank->country);
     }
+
+    public function test_user_with_view_access_can_see_online_banking_credentials(): void
+    {
+        $moderator = User::factory()->create();
+        $company = Company::factory()->withModerator($moderator)->create();
+
+        $viewer = User::factory()->create();
+        $company->accessUsers()->attach($viewer->id, ['access_type' => 'view']);
+
+        Bank::factory()->for($company)->create([
+            'name' => 'Credentials Bank',
+            'login' => 'viewer-login',
+            'password' => 'Secret123!',
+            'online_banking_url' => 'https://bank.example/viewer',
+        ]);
+
+        $response = $this->actingAs($viewer)
+            ->get(route('admin.companies.show', $company));
+
+        $response->assertOk();
+        $response->assertSeeText('Доступ к онлайн-банку');
+        $response->assertSee('viewer-login', false);
+        $response->assertSee('https://bank.example/viewer', false);
+    }
 }
 

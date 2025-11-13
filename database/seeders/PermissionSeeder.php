@@ -102,6 +102,21 @@ class PermissionSeeder extends Seeder
             ],
             [
                 'group' => [
+                    'name' => 'Телефонный справочник',
+                    'slug' => 'user-phones',
+                    'description' => 'Управление телефонными контактами сотрудников',
+                    'sort_order' => 65,
+                ],
+                'permissions' => [
+                    ['name' => 'Просмотр телефонного справочника', 'slug' => 'user-phones.view', 'type' => 'view', 'sort_order' => 1],
+                    ['name' => 'Создание записи телефонного справочника', 'slug' => 'user-phones.create', 'type' => 'create', 'sort_order' => 2],
+                    ['name' => 'Редактирование записи телефонного справочника', 'slug' => 'user-phones.edit', 'type' => 'edit', 'sort_order' => 3],
+                    ['name' => 'Удаление записи телефонного справочника', 'slug' => 'user-phones.delete', 'type' => 'delete', 'sort_order' => 4],
+                    ['name' => 'Полное управление телефонным справочником', 'slug' => 'user-phones.manage', 'type' => 'manage', 'sort_order' => 5],
+                ],
+            ],
+            [
+                'group' => [
                     'name' => 'Роли и разрешения',
                     'slug' => 'roles',
                     'description' => 'Управление ролями и разрешениями',
@@ -156,16 +171,28 @@ class PermissionSeeder extends Seeder
 
         // Создаём группы и разрешения
         foreach ($permissionsStructure as $item) {
-            $group = PermissionGroup::create($item['group']);
+            $groupData = $item['group'];
+
+            $group = PermissionGroup::updateOrCreate(
+                ['slug' => $groupData['slug']],
+                [
+                    'name' => $groupData['name'],
+                    'description' => $groupData['description'] ?? null,
+                    'sort_order' => $groupData['sort_order'] ?? 0,
+                ]
+            );
 
             foreach ($item['permissions'] as $permission) {
-                Permission::create([
-                    'permission_group_id' => $group->id,
-                    'name' => $permission['name'],
-                    'slug' => $permission['slug'],
-                    'type' => $permission['type'],
-                    'sort_order' => $permission['sort_order'],
-                ]);
+                Permission::updateOrCreate(
+                    ['slug' => $permission['slug']],
+                    [
+                        'permission_group_id' => $group->id,
+                        'name' => $permission['name'],
+                        'description' => $permission['description'] ?? null,
+                        'type' => $permission['type'],
+                        'sort_order' => $permission['sort_order'] ?? 0,
+                    ]
+                );
             }
         }
     }

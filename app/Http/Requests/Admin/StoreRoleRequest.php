@@ -12,8 +12,13 @@ class StoreRoleRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        // Только супер админ может создавать роли
-        return $this->user()?->isSuperAdmin() ?? false;
+        $user = $this->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        return $user->hasAnyPermission(['roles.create', 'roles.manage']);
     }
 
     /**

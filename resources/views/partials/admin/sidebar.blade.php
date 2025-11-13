@@ -55,6 +55,16 @@
       </a>
     </li>
 
+    <li class="menu-header small text-uppercase">
+      <span class="menu-header-text">{{ __('Коммуникации') }}</span>
+    </li>
+    <li class="menu-item {{ $currentRoute === 'admin.chat.index' ? 'active' : '' }}">
+      <a href="{{ route('admin.chat.index') }}" class="menu-link">
+        <i class="menu-icon icon-base ti tabler-message-circle"></i>
+        <div>{{ __('Чат') }}</div>
+      </a>
+    </li>
+
     @if(auth()->user()->hasAnyPermission(['companies.view', 'companies.manage']))
     <li class="menu-header small text-uppercase">
       <span class="menu-header-text">{{ __('Компании') }}</span>
@@ -103,16 +113,26 @@
       </li>
     @endforelse
 
-    @if(auth()->user()->hasAnyPermission(['users.view', 'users.manage']))
+    @if(auth()->user()->hasAnyPermission(['users.view', 'users.manage', 'user-phones.view', 'user-phones.manage']))
     <li class="menu-header small text-uppercase">
       <span class="menu-header-text">{{ __('Пользователи') }}</span>
     </li>
-    <li class="menu-item {{ $currentRoute === 'admin.users.index' ? 'active' : '' }}">
-      <a href="{{ route('admin.users.index') }}" class="menu-link">
-        <i class="menu-icon icon-base ti tabler-users"></i>
-        <div>{{ __('Список пользователей') }}</div>
+    @if(auth()->user()->hasAnyPermission(['users.view', 'users.manage']))
+      <li class="menu-item {{ $currentRoute === 'admin.users.index' ? 'active' : '' }}">
+        <a href="{{ route('admin.users.index') }}" class="menu-link">
+          <i class="menu-icon icon-base ti tabler-users"></i>
+          <div>{{ __('Список пользователей') }}</div>
+        </a>
+      </li>
+    @endif
+    @if(auth()->user()->hasAnyPermission(['user-phones.view', 'user-phones.manage']))
+    <li class="menu-item {{ $currentRoute === 'admin.users.phones.index' ? 'active' : '' }}">
+      <a href="{{ route('admin.users.phones.index') }}" class="menu-link">
+        <i class="menu-icon icon-base ti tabler-address-book"></i>
+        <div>{{ __('Телефоны') }}</div>
       </a>
     </li>
+    @endif
     @if(auth()->user()->hasAnyPermission(['users.create', 'users.manage']))
     <li class="menu-item {{ $currentRoute === 'admin.users.create' ? 'active' : '' }}">
       <a href="{{ route('admin.users.create') }}" class="menu-link">

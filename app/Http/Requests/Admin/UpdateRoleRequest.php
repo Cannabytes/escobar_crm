@@ -12,8 +12,13 @@ class UpdateRoleRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        // Только супер админ может редактировать роли
-        return $this->user()?->isSuperAdmin() ?? false;
+        $user = $this->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        return $user->hasAnyPermission(['roles.edit', 'roles.manage']);
     }
 
     /**

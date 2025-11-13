@@ -17,7 +17,9 @@ class CompanyController extends Controller
 {
     public function __construct()
     {
-        $this->authorizeResource(Company::class, 'company');
+        $this->authorizeResource(Company::class, 'company', [
+            'except' => ['removeModerator']
+        ]);
     }
 
     public function index(): View
@@ -69,6 +71,7 @@ class CompanyController extends Controller
             'bankAccounts',
             'banks' => fn ($query) => $query->with('details'),
             'accessUsers',
+            'licenses',
         ]);
 
         return view('admin.companies.show', compact('company'));
@@ -141,5 +144,21 @@ class CompanyController extends Controller
         return redirect()
             ->route('admin.companies.index')
             ->with('status', __('Компания успешно удалена.'));
+    }
+
+    public function removeModerator(Company $company): RedirectResponse
+    {
+        // Только супер-админ может удалить главного модератора
+        if (auth()->user()?->role !== User::ROLE_SUPER_ADMIN) {
+            abort(403, __('Только супер-администратор может удалить главного модератора.'));
+        }
+
+        $this->authorize('update', $company);
+
+        $company->update(['moderator_id' => null]);
+
+        return redirect()
+            ->route('admin.companies.show', $company)
+            ->with('status', __('Главный модератор удален.'));
     }
 }

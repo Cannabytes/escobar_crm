@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\CurrencyRateService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -15,6 +16,8 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->usePublicPath(base_path());
+
+        $this->app->singleton(CurrencyRateService::class);
     }
 
     /**
@@ -37,7 +40,13 @@ class AppServiceProvider extends ServiceProvider
             $view->with('currentLocale', app()->getLocale());
         });
 
-        
+        View::composer('partials.admin.navbar', function ($view): void {
+            /** @var CurrencyRateService $currencyRates */
+            $currencyRates = app(CurrencyRateService::class);
+
+            $view->with('currencyTicker', $currencyRates->getRates(['USD', 'EUR', 'CNY']));
+        });
+
         View::composer('partials.admin.sidebar', function ($view) {
             $user = Auth::user();
 

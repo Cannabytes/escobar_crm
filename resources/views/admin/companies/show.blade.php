@@ -65,6 +65,132 @@
         });
       }
 
+      // AJAX удаление лицензий
+      document.querySelectorAll('.delete-license-btn, .delete-license-btn-modal').forEach(button => {
+        button.addEventListener('click', async function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          const licenseId = this.getAttribute('data-license-id');
+          const url = this.getAttribute('data-url');
+          const licenseItem = document.getElementById('license-item-' + licenseId);
+          
+          // Подтверждение удаления
+          let confirmed = false;
+          
+          try {
+            if (typeof Swal !== 'undefined' && Swal.fire) {
+              const result = await Swal.fire({
+                title: '{{ __('Удалить лицензию?') }}',
+                text: '{{ __('Это действие нельзя отменить') }}',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: '{{ __('Да, удалить') }}',
+                cancelButtonText: '{{ __('Отмена') }}',
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                reverseButtons: true
+              });
+              confirmed = result.isConfirmed;
+            } else {
+              confirmed = confirm('{{ __('Удалить лицензию?') }}');
+            }
+          } catch (error) {
+            confirmed = confirm('{{ __('Удалить лицензию?') }}');
+          }
+          
+          if (!confirmed) return;
+          
+          const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+          
+          try {
+            const response = await fetch(url, {
+              method: 'DELETE',
+              headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+              },
+              credentials: 'same-origin'
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success !== false) {
+              // Удаляем элемент с анимацией
+              if (licenseItem) {
+                licenseItem.style.transition = 'opacity 0.3s ease-out';
+                licenseItem.style.opacity = '0';
+                setTimeout(() => {
+                  licenseItem.remove();
+                  
+                  // Если лицензий больше нет, перезагружаем страницу
+                  const remainingLicenses = document.querySelectorAll('[id^="license-item-"]').length;
+                  if (remainingLicenses === 0) {
+                    location.reload();
+                  }
+                }, 300);
+              }
+              
+              // Показываем уведомление
+              if (typeof Swal !== 'undefined' && Swal.fire) {
+                Swal.fire({
+                  icon: 'success',
+                  title: '{{ __('Успешно') }}',
+                  text: data.message || '{{ __('Лицензия удалена') }}',
+                  timer: 2000,
+                  showConfirmButton: false,
+                  toast: true,
+                  position: 'top-end'
+                });
+              }
+            } else {
+              throw new Error(data.message || '{{ __('Ошибка при удалении лицензии') }}');
+            }
+          } catch (error) {
+            console.error('Ошибка при удалении лицензии:', error);
+            
+            if (typeof Swal !== 'undefined' && Swal.fire) {
+              Swal.fire({
+                icon: 'error',
+                title: '{{ __('Ошибка') }}',
+                text: error.message || '{{ __('Ошибка при удалении лицензии') }}'
+              });
+            } else {
+              alert(error.message || '{{ __('Ошибка при удалении лицензии') }}');
+            }
+          }
+        });
+      });
+      
+      // Предпросмотр изображений перед загрузкой
+      const fileInput = document.querySelector('input[name="license_files[]"]');
+      if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+          const previewContainer = document.getElementById('preview-container');
+          previewContainer.innerHTML = '';
+          
+          const files = Array.from(e.target.files);
+          files.forEach(file => {
+            if (file.type.startsWith('image/')) {
+              const reader = new FileReader();
+              reader.onload = function(event) {
+                const col = document.createElement('div');
+                col.className = 'col-4';
+                col.innerHTML = `
+                  <img src="${event.target.result}" 
+                       class="img-fluid rounded" 
+                       style="width: 100%; height: 80px; object-fit: cover;">
+                `;
+                previewContainer.appendChild(col);
+              };
+              reader.readAsDataURL(file);
+            }
+          });
+        });
+      }
+
       // AJAX удаление реквизитов банка
       document.querySelectorAll('.delete-bank-detail-btn').forEach(button => {
         button.addEventListener('click', async function(e) {
@@ -269,29 +395,54 @@
           <h5 class="mb-0">{{ __('Лицензия компании') }}</h5>
         </div>
         <div class="card-body d-flex flex-column h-100">
-          @if ($company->license_file)
-            <div class="text-center mb-4">
-              <img src="{{ asset('storage/' . $company->license_file) }}" 
-                   alt="{{ __('Лицензия') }}" 
-                   class="img-fluid rounded mb-3"
-                   style="max-height: 300px; cursor: pointer;"
-                   data-bs-toggle="modal" 
-                   data-bs-target="#licenseModal">
-              <div class="d-grid gap-2">
-                <a href="{{ asset('storage/' . $company->license_file) }}" 
-                   class="btn btn-sm btn-primary" download>
-                  <i class="icon-base ti tabler-download me-1"></i> {{ __('Скачать') }}
-                </a>
-                <button type="button" class="btn btn-sm btn-label-primary" 
-                        data-bs-toggle="modal" data-bs-target="#licenseModal">
-                  <i class="icon-base ti tabler-eye me-1"></i> {{ __('Просмотр') }}
-                </button>
+          @if ($company->licenses->count() > 0)
+            <!-- Галерея лицензий -->
+            <div class="mb-4">
+              <div class="row g-2">
+                @foreach($company->licenses as $license)
+                  <div class="col-6 col-md-4" id="license-item-{{ $license->id }}">
+                    <div class="position-relative license-image-wrapper">
+                      <img src="{{ url('public/storage/' . $license->file_path) }}" 
+                           alt="{{ __('Лицензия') }}" 
+                           class="img-fluid rounded cursor-pointer license-thumbnail"
+                           style="width: 100%; height: 150px; object-fit: cover;"
+                           data-bs-toggle="modal" 
+                           data-bs-target="#licenseModal{{ $license->id }}">
+                      
+                      @if($canEditCompany)
+                        <button type="button" 
+                                class="btn btn-sm btn-danger position-absolute delete-license-btn"
+                                style="top: 5px; right: 5px; padding: 2px 6px; opacity: 0.9;"
+                                data-license-id="{{ $license->id }}"
+                                data-url="{{ route('admin.companies.licenses.destroy', [$company, $license]) }}"
+                                title="{{ __('Удалить') }}">
+                          <i class="ti tabler-trash" style="font-size: 0.9rem;"></i>
+                        </button>
+                      @endif
+                    </div>
+                  </div>
+                @endforeach
               </div>
             </div>
+            
+            @if($canEditCompany)
+              <div class="d-grid mb-4">
+                <button type="button" class="btn btn-sm btn-primary" 
+                        data-bs-toggle="modal" data-bs-target="#uploadLicenseModal">
+                  <i class="icon-base ti tabler-upload me-1"></i> {{ __('Загрузить ещё') }}
+                </button>
+              </div>
+            @endif
           @else
             <div class="text-center text-muted py-5 mb-4 border rounded border-dashed">
               <i class="icon-base ti tabler-file-text" style="font-size: 48px;"></i>
-              <p class="mt-2 mb-0">{{ __('Лицензия не загружена') }}</p>
+              <p class="mt-2 mb-0">{{ __('Лицензии не загружены') }}</p>
+              @if($canEditCompany)
+                <button type="button" class="btn btn-sm btn-primary mt-3" 
+                        data-bs-toggle="modal" data-bs-target="#uploadLicenseModal">
+                  <i class="icon-base ti tabler-upload me-1"></i> {{ __('Загрузить лицензию') }}
+                </button>
+              @endif
             </div>
           @endif
 
@@ -435,7 +586,9 @@
 
             @forelse ($company->banks as $bank)
               @php
-                $canManageBank = auth()->user()?->can('update', $bank);
+                $authUser = auth()->user();
+                $canManageBank = $authUser?->can('update', $bank);
+                $canViewBankCredentials = $authUser ? $company->canUserViewCredentials($authUser) : false;
                 $credentialItems = collect([
                   ['key' => 'login', 'label' => __('Логин'), 'value' => $bank->login],
                   ['key' => 'login_id', 'label' => __('Логин ID'), 'value' => $bank->login_id],
@@ -511,7 +664,7 @@
                           <i class="icon-base ti tabler-key me-2 text-primary"></i>
                           <h6 class="mb-0">{{ __('Доступ к онлайн-банку') }}</h6>
                         </div>
-                        @if($canManageBank)
+                        @if($canViewBankCredentials)
                           @if($hasCredentialData)
                             @php
                               $itemsArray = $credentialItems->filter(fn($item) => filled($item['value']))->values()->all();
@@ -1198,29 +1351,83 @@
   </div>
 @endif
 
-<!-- Modal: Просмотр лицензии -->
-@if ($company->license_file)
-<div class="modal fade" id="licenseModal" tabindex="-1">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
+<!-- Модальные окна для просмотра лицензий -->
+@foreach($company->licenses as $license)
+  <div class="modal fade" id="licenseModal{{ $license->id }}" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ __('Лицензия компании') }} — {{ $company->name }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body text-center" style="max-height: 80vh; overflow-y: auto;">
+          <img src="{{ url('public/storage/' . $license->file_path) }}" 
+               alt="{{ __('Лицензия') }}" 
+               class="img-fluid"
+               style="max-width: 100%; height: auto;">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">
+            {{ __('Закрыть') }}
+          </button>
+          <a href="{{ url('public/storage/' . $license->file_path) }}" 
+             class="btn btn-primary" download="{{ $license->original_name }}">
+            <i class="icon-base ti tabler-download me-1"></i> {{ __('Скачать') }}
+          </a>
+          @if($canEditCompany)
+            <button type="button" 
+                    class="btn btn-danger delete-license-btn-modal"
+                    data-license-id="{{ $license->id }}"
+                    data-url="{{ route('admin.companies.licenses.destroy', [$company, $license]) }}"
+                    data-bs-dismiss="modal">
+              <i class="icon-base ti tabler-trash me-1"></i> {{ __('Удалить') }}
+            </button>
+          @endif
+        </div>
+      </div>
+    </div>
+  </div>
+@endforeach
+
+@if($canEditCompany)
+<!-- Modal: Загрузка лицензий -->
+<div class="modal fade" id="uploadLicenseModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">{{ __('Лицензия компании') }} — {{ $company->name }}</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body text-center">
-        <img src="{{ asset('storage/' . $company->license_file) }}" 
-             alt="{{ __('Лицензия') }}" 
-             class="img-fluid">
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">
-          {{ __('Закрыть') }}
-        </button>
-        <a href="{{ asset('storage/' . $company->license_file) }}" 
-           class="btn btn-primary" download>
-          <i class="icon-base ti tabler-download me-1"></i> {{ __('Скачать') }}
-        </a>
-      </div>
+      <form action="{{ route('admin.companies.licenses.store', $company) }}" method="POST" enctype="multipart/form-data">
+        @csrf
+        <div class="modal-header">
+          <h5 class="modal-title">{{ __('Загрузить лицензии') }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label required">{{ __('Выберите изображения лицензий') }}</label>
+            <input type="file" 
+                   class="form-control @error('license_files.*') is-invalid @enderror" 
+                   name="license_files[]" 
+                   accept="image/*"
+                   multiple
+                   required>
+            <small class="text-muted">
+              {{ __('Вы можете выбрать несколько файлов. Допустимые форматы: JPEG, PNG, JPG, GIF, WEBP. Максимальный размер файла: 10 МБ.') }}
+            </small>
+            @error('license_files.*')
+              <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+          </div>
+          
+          <div id="preview-container" class="row g-2 mt-2"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">
+            {{ __('Отмена') }}
+          </button>
+          <button type="submit" class="btn btn-primary">
+            <i class="icon-base ti tabler-upload me-1"></i> {{ __('Загрузить') }}
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
@@ -1404,7 +1611,7 @@
         <div class="modal-body">
           <div class="alert alert-info mb-3">
             <i class="icon-base ti tabler-info-circle me-1"></i>
-            {{ __('Пользователи с доступом смогут редактировать данные компании') }}
+            {{ __('Выберите пользователя и уровень доступа: полный — для редактирования, только чтение — для просмотра без изменений.') }}
           </div>
           <div class="mb-3">
             <label class="form-label required">{{ __('Пользователь') }}</label>
@@ -1412,29 +1619,35 @@
               <option value="">{{ __('Выберите пользователя') }}</option>
               @php
                 // Получаем всех пользователей, кроме тех, кто уже имеет доступ к компании
-                $availableUsers = \App\Models\User::whereNotIn('id', $company->accessUsers->pluck('id'))
+                $availableUsers = \App\Models\User::with('roleModel')
+                  ->whereNotIn('id', $company->accessUsers->pluck('id'))
                   ->where('id', '!=', $company->moderator_id) // Исключаем главного модератора
                   ->orderBy('name')
                   ->get();
+                $selectedUserId = old('user_id');
+                $selectedAccessType = old('access_type', 'edit');
               @endphp
               @forelse ($availableUsers as $user)
-                <option value="{{ $user->id }}">
-                  {{ $user->name }} ({{ $user->email }})
-                  @if($user->role === \App\Models\User::ROLE_SUPER_ADMIN)
-                    - {{ __('Супер-админ') }}
-                  @elseif($user->role === \App\Models\User::ROLE_MODERATOR)
-                    - {{ __('Модератор') }}
-                  @elseif($user->role === \App\Models\User::ROLE_VIEWER)
-                    - {{ __('Пользователь') }}
-                  @endif
+                @php
+                  $label = $user->roleModel?->name;
+                  if (! $label && $user->role === \App\Models\User::ROLE_SUPER_ADMIN) {
+                      $label = __('Супер-админ');
+                  } elseif (! $label) {
+                      $label = __('Пользователь');
+                  }
+                @endphp
+                <option value="{{ $user->id }}" @selected((string) $selectedUserId === (string) $user->id)>
+                  {{ $user->name }} ({{ $user->email }}) - {{ $label }}
                 </option>
               @empty
                 <option value="" disabled>{{ __('Нет доступных пользователей для добавления') }}</option>
               @endforelse
             </select>
-            <input type="hidden" name="access_type" value="edit">
+            @error('user_id')
+              <div class="text-danger small mt-1">{{ $message }}</div>
+            @enderror
             <small class="text-muted d-block mt-2">
-              {{ __('Выберите пользователя, который сможет изменять данные компании') }}
+              {{ __('Пользователь получит доступ к данным выбранной компании') }}
             </small>
             @if($availableUsers->isEmpty())
               <div class="alert alert-warning mt-2 mb-0">
@@ -1444,6 +1657,28 @@
                 </small>
               </div>
             @endif
+          </div>
+          <div class="mb-3">
+            <label class="form-label required">{{ __('Уровень доступа') }}</label>
+            <div class="d-flex flex-column gap-2">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="access_type" id="access_type_edit" value="edit" @checked($selectedAccessType === 'edit')>
+                <label class="form-check-label" for="access_type_edit">
+                  <strong>{{ __('Полный доступ') }}</strong>
+                  <span class="d-block text-muted small">{{ __('Пользователь сможет редактировать и управлять данными компании.') }}</span>
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="access_type" id="access_type_view" value="view" @checked($selectedAccessType === 'view')>
+                <label class="form-check-label" for="access_type_view">
+                  <strong>{{ __('Только чтение') }}</strong>
+                  <span class="d-block text-muted small">{{ __('Пользователь сможет просматривать данные, но не сможет их изменять.') }}</span>
+                </label>
+              </div>
+            </div>
+            @error('access_type')
+              <div class="text-danger small mt-1">{{ $message }}</div>
+            @enderror
           </div>
         </div>
         <div class="modal-footer">
@@ -1526,6 +1761,38 @@
   
   .select2-container--open {
     z-index: 10001;
+  }
+  
+  /* Стили для галереи лицензий */
+  .license-image-wrapper {
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.375rem;
+  }
+  
+  .license-thumbnail {
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+  
+  .license-image-wrapper:hover .license-thumbnail {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+  
+  .license-image-wrapper .delete-license-btn {
+    transition: opacity 0.3s ease;
+  }
+  
+  .license-image-wrapper:not(:hover) .delete-license-btn {
+    opacity: 0;
+  }
+  
+  .license-image-wrapper:hover .delete-license-btn {
+    opacity: 1 !important;
+  }
+  
+  .cursor-pointer {
+    cursor: pointer;
   }
 </style>
 @endsection

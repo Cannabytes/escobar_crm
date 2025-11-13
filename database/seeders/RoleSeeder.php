@@ -13,113 +13,122 @@ class RoleSeeder extends Seeder
      */
     public function run(): void
     {
-        // Создаём роль супер-админа (имеет все права автоматически)
-        $superAdmin = Role::create([
-            'name' => 'Супер Администратор',
-            'slug' => Role::ROLE_SUPER_ADMIN,
-            'description' => 'Полный доступ ко всем функциям системы',
-            'is_system' => true,
-            'is_active' => true,
-        ]);
+        $roles = [
+            [
+                'slug' => Role::ROLE_SUPER_ADMIN,
+                'name' => 'Супер Администратор',
+                'description' => 'Полный доступ ко всем функциям системы',
+                'is_system' => true,
+                'is_active' => true,
+                'permissions' => [],
+            ],
+            [
+                'slug' => Role::ROLE_ADMIN,
+                'name' => 'Администратор',
+                'description' => 'Управление компаниями, пользователями и основными функциями',
+                'is_system' => true,
+                'is_active' => true,
+                'permissions' => Permission::query()
+                    ->whereNotIn('slug', [
+                        'roles.view',
+                        'roles.show',
+                        'roles.create',
+                        'roles.edit',
+                        'roles.delete',
+                        'roles.manage',
+                        'logs.view',
+                        'logs.show',
+                    ])
+                    ->pluck('slug')
+                    ->toArray(),
+            ],
+            [
+                'slug' => 'company_moderator',
+                'name' => 'Модератор компаний',
+                'description' => 'Управление компаниями и их данными',
+                'is_system' => false,
+                'is_active' => true,
+                'permissions' => [
+                    'companies.view',
+                    'companies.show',
+                    'companies.edit',
+                    'company-licenses.view',
+                    'company-licenses.edit',
+                    'company-bank-accounts.view',
+                    'company-bank-accounts.create',
+                    'company-bank-accounts.edit',
+                    'company-bank-accounts.delete',
+                    'company-credentials.view',
+                    'company-credentials.create',
+                    'company-credentials.edit',
+                    'company-access.view',
+                    'profile.view',
+                    'profile.edit',
+                ],
+            ],
+            [
+                'slug' => 'viewer',
+                'name' => 'Наблюдатель',
+                'description' => 'Только просмотр информации о компаниях',
+                'is_system' => false,
+                'is_active' => true,
+                'permissions' => [
+                    'companies.view',
+                    'companies.show',
+                    'company-bank-accounts.view',
+                    'profile.view',
+                    'profile.edit',
+                ],
+            ],
+            [
+                'slug' => 'user_manager',
+                'name' => 'Менеджер пользователей',
+                'description' => 'Управление пользователями системы',
+                'is_system' => false,
+                'is_active' => true,
+                'permissions' => [
+                    'users.view',
+                    'users.show',
+                    'users.create',
+                    'users.edit',
+                    'user-phones.view',
+                    'user-phones.create',
+                    'user-phones.edit',
+                    'user-phones.delete',
+                    'companies.view',
+                    'companies.show',
+                    'company-access.view',
+                    'company-access.create',
+                    'company-access.delete',
+                    'profile.view',
+                    'profile.edit',
+                ],
+            ],
+        ];
 
-        // Создаём роль администратора
-        $admin = Role::create([
-            'name' => 'Администратор',
-            'slug' => Role::ROLE_ADMIN,
-            'description' => 'Управление компаниями, пользователями и основными функциями',
-            'is_system' => true,
-            'is_active' => true,
-        ]);
+        foreach ($roles as $roleData) {
+            $role = Role::updateOrCreate(
+                ['slug' => $roleData['slug']],
+                [
+                    'name' => $roleData['name'],
+                    'description' => $roleData['description'],
+                    'is_system' => $roleData['is_system'],
+                    'is_active' => $roleData['is_active'],
+                ]
+            );
 
-        // Назначаем права администратору (все, кроме управления ролями)
-        $adminPermissions = Permission::whereNotIn('slug', [
-            'roles.view',
-            'roles.show',
-            'roles.create',
-            'roles.edit',
-            'roles.delete',
-            'roles.manage',
-            'logs.view',
-            'logs.show',
-        ])->pluck('id')->toArray();
+            if (! empty($roleData['permissions'])) {
+                $permissionIds = Permission::whereIn('slug', $roleData['permissions'])
+                    ->pluck('id')
+                    ->toArray();
 
-        $admin->syncPermissions($adminPermissions);
-
-        // Создаём роль модератора компаний
-        $moderator = Role::create([
-            'name' => 'Модератор компаний',
-            'slug' => 'company_moderator',
-            'description' => 'Управление компаниями и их данными',
-            'is_system' => false,
-            'is_active' => true,
-        ]);
-
-        // Назначаем права модератору
-        $moderatorPermissions = Permission::whereIn('slug', [
-            'companies.view',
-            'companies.show',
-            'companies.edit',
-            'company-licenses.view',
-            'company-licenses.edit',
-            'company-bank-accounts.view',
-            'company-bank-accounts.create',
-            'company-bank-accounts.edit',
-            'company-bank-accounts.delete',
-            'company-credentials.view',
-            'company-credentials.create',
-            'company-credentials.edit',
-            'company-access.view',
-            'profile.view',
-            'profile.edit',
-        ])->pluck('id')->toArray();
-
-        $moderator->syncPermissions($moderatorPermissions);
-
-        // Создаём роль наблюдателя
-        $viewer = Role::create([
-            'name' => 'Наблюдатель',
-            'slug' => 'viewer',
-            'description' => 'Только просмотр информации о компаниях',
-            'is_system' => false,
-            'is_active' => true,
-        ]);
-
-        // Назначаем права наблюдателю (только просмотр)
-        $viewerPermissions = Permission::whereIn('slug', [
-            'companies.view',
-            'companies.show',
-            'company-bank-accounts.view',
-            'profile.view',
-            'profile.edit',
-        ])->pluck('id')->toArray();
-
-        $viewer->syncPermissions($viewerPermissions);
-
-        // Создаём роль менеджера пользователей
-        $userManager = Role::create([
-            'name' => 'Менеджер пользователей',
-            'slug' => 'user_manager',
-            'description' => 'Управление пользователями системы',
-            'is_system' => false,
-            'is_active' => true,
-        ]);
-
-        // Назначаем права менеджеру пользователей
-        $userManagerPermissions = Permission::whereIn('slug', [
-            'users.view',
-            'users.show',
-            'users.create',
-            'users.edit',
-            'companies.view',
-            'companies.show',
-            'company-access.view',
-            'company-access.create',
-            'company-access.delete',
-            'profile.view',
-            'profile.edit',
-        ])->pluck('id')->toArray();
-
-        $userManager->syncPermissions($userManagerPermissions);
+                $role->syncPermissions($permissionIds);
+            } elseif ($role->slug === Role::ROLE_SUPER_ADMIN) {
+                // Супер администратор обладает всеми правами — синхронизируем полностью для актуальности
+                $allPermissionIds = Permission::pluck('id')->toArray();
+                $role->syncPermissions($allPermissionIds);
+            }
+        }
     }
 }
 

@@ -9,8 +9,8 @@
 ### Отслеживание активности
 
 1. **Middleware LogUserActivity** автоматически обновляет поле `last_activity_at` при каждом запросе пользователя
-2. Обновление происходит только если прошло более 5 минут с последнего обновления (оптимизация БД)
-3. Middleware зарегистрирован глобально и работает для всех аутентифицированных пользователей
+2. Обновление происходит только если прошла хотя бы 1 минута с последнего обновления (оптимизация БД)
+3. Middleware включён в группу `web`, поэтому выполняется уже после запуска сессии и корректно работает для аутентифицированных пользователей
 
 ### Определение онлайн статуса
 
@@ -142,14 +142,14 @@ Schema::table('users', function (Blueprint $table) {
 
 ### Оптимизация обновлений
 
-Middleware обновляет `last_activity_at` с интервалом 5 минут:
+Middleware обновляет `last_activity_at` с интервалом 1 минуты:
 
 ```php
 if (
     !$user->last_activity_at || 
-    $user->last_activity_at->diffInMinutes(now()) >= 5
+    $user->last_activity_at->diffInMinutes(now()) >= 1
 ) {
-    $user->update(['last_activity_at' => now()]);
+    $user->updateQuietly(['last_activity_at' => now()]);
 }
 ```
 

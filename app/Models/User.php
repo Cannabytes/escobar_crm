@@ -26,6 +26,7 @@ class User extends Authenticatable
         'role_id',
         'phone',
         'operator',
+        'phone_comment',
         'telegram',
         'whatsapp',
         'last_activity_at',

@@ -1,14 +1,15 @@
 <?php
 
+use App\Http\Controllers\Admin\ChatController;
 use App\Http\Controllers\Admin\CompanyAccessController;
 use App\Http\Controllers\Admin\CompanyBankAccountController;
 use App\Http\Controllers\Admin\CompanyBankController;
 use App\Http\Controllers\Admin\CompanyBankDetailController;
 use App\Http\Controllers\Admin\CompanyController;
+use App\Http\Controllers\Admin\PhoneContactController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
-use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Install\SuperAdminController;
 use App\Http\Controllers\LocaleController;
 use App\Support\SystemState;
@@ -39,9 +40,6 @@ Route::middleware('guest')->group(function () {
 Route::middleware(['guest', 'ensure.installed'])->group(function () {
     Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('login', [AuthenticatedSessionController::class, 'store'])->name('login.store');
-
-    Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
-    Route::post('register', [RegisteredUserController::class, 'store'])->name('register.store');
 });
 
 Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
@@ -81,6 +79,12 @@ Route::prefix('admin')->name('admin.')->middleware(['ensure.installed', 'auth'])
     // Лицензионные данные компании
     Route::put('companies/{company}/license', [CompanyController::class, 'updateLicense'])
         ->name('companies.license.update');
+    
+    // Управление лицензиями компании (множественные изображения)
+    Route::post('companies/{company}/licenses', [\App\Http\Controllers\Admin\CompanyLicenseController::class, 'store'])
+        ->name('companies.licenses.store');
+    Route::delete('companies/{company}/licenses/{license}', [\App\Http\Controllers\Admin\CompanyLicenseController::class, 'destroy'])
+        ->name('companies.licenses.destroy');
 
     // Доступ пользователей к компании
     Route::post('companies/{company}/access', [CompanyAccessController::class, 'store'])
@@ -94,8 +98,15 @@ Route::prefix('admin')->name('admin.')->middleware(['ensure.installed', 'auth'])
 
     // Пользователи
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
+    Route::get('/users/phones', [PhoneContactController::class, 'index'])->name('users.phones.index');
+    Route::post('/users/phones', [PhoneContactController::class, 'store'])->name('users.phones.store');
+    Route::put('/users/phones/{phoneContact}', [PhoneContactController::class, 'update'])->name('users.phones.update');
+    Route::delete('/users/phones/{phoneContact}', [PhoneContactController::class, 'destroy'])->name('users.phones.destroy');
     Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
     Route::post('/users', [UserController::class, 'store'])->name('users.store');
+    Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+    Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+    Route::put('/users/{user}/phone', [UserController::class, 'updatePhone'])->name('users.update-phone');
 
     // Логи активности (только для супер админа)
     Route::get('/logs', [\App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('logs.index');
@@ -112,4 +123,13 @@ Route::prefix('admin')->name('admin.')->middleware(['ensure.installed', 'auth'])
     Route::resource('roles', RoleController::class);
     Route::post('/roles/{role}/toggle-active', [RoleController::class, 'toggleActive'])->name('roles.toggle-active');
     Route::post('/roles/{role}/clone', [RoleController::class, 'clone'])->name('roles.clone');
+
+    // Чат
+    Route::get('chat', [ChatController::class, 'index'])->name('chat.index');
+    Route::get('chat/rooms', [ChatController::class, 'rooms'])->name('chat.rooms.index');
+    Route::post('chat/rooms', [ChatController::class, 'storeRoom'])->name('chat.rooms.store');
+    Route::get('chat/rooms/{room}/messages', [ChatController::class, 'messages'])->name('chat.rooms.messages.index');
+    Route::post('chat/rooms/{room}/messages', [ChatController::class, 'storeMessage'])->name('chat.rooms.messages.store');
+    Route::get('chat/users', [ChatController::class, 'users'])->name('chat.users.index');
+    Route::get('chat/users/search', [ChatController::class, 'searchUsers'])->name('chat.users.search');
 });

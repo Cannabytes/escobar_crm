@@ -17,7 +17,12 @@ class RoleController extends Controller
     public function __construct(
         private readonly RoleService $roleService,
         private readonly PermissionService $permissionService
-    ) {}
+    ) {
+        $this->middleware('permission:roles.view,roles.manage')->only(['index', 'show']);
+        $this->middleware('permission:roles.create,roles.manage')->only(['create', 'store', 'clone']);
+        $this->middleware('permission:roles.edit,roles.manage')->only(['edit', 'update', 'toggleActive']);
+        $this->middleware('permission:roles.delete,roles.manage')->only(['destroy']);
+    }
 
     /**
      * Display a listing of the resource.

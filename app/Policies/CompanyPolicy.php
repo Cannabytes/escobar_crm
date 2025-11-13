@@ -12,17 +12,38 @@ class CompanyPolicy
 
     public function viewAny(User $user): bool
     {
-        return $user !== null;
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        return $user->hasAnyPermission([
+            'companies.view',
+            'companies.manage',
+            'companies.create',
+            'companies.edit',
+        ]);
     }
 
     public function view(User $user, Company $company): bool
     {
-        return true;
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        if ($user->hasAnyPermission(['companies.view', 'companies.manage'])) {
+            return true;
+        }
+
+        return $company->canUserView($user);
     }
 
     public function create(User $user): bool
     {
-        return $user->isSuperAdmin();
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        return $user->hasAnyPermission(['companies.create', 'companies.manage']);
     }
 
     public function update(User $user, Company $company): bool
@@ -31,22 +52,38 @@ class CompanyPolicy
             return true;
         }
 
+        if ($user->hasAnyPermission(['companies.edit', 'companies.manage'])) {
+            return true;
+        }
+
         return $company->canUserEdit($user);
     }
 
     public function delete(User $user, Company $company): bool
     {
-        return $user->isSuperAdmin();
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        return $user->hasAnyPermission(['companies.delete', 'companies.manage']);
     }
 
     public function restore(User $user, Company $company): bool
     {
-        return $user->isSuperAdmin();
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        return $user->hasAnyPermission(['companies.delete', 'companies.manage']);
     }
 
     public function forceDelete(User $user, Company $company): bool
     {
-        return $user->isSuperAdmin();
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        return $user->hasAnyPermission(['companies.delete', 'companies.manage']);
     }
 }
 

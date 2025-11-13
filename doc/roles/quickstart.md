@@ -9,8 +9,8 @@ php artisan migrate
 ## Шаг 2: Заполнение базовых данных
 
 ```bash
-php artisan db:seed --class=PermissionSeeder
-php artisan db:seed --class=RoleSeeder
+php artisan db:seed --class=PermissionSeeder --force
+php artisan db:seed --class=RoleSeeder --force
 ```
 
 ## Шаг 3: Очистка кэша
@@ -23,7 +23,7 @@ php artisan config:clear
 
 ## Шаг 4: Доступ к системе
 
-1. Войдите в систему как **супер-администратор**
+1. Войдите в систему под пользователем, у которого есть разрешение `roles.view` или `roles.manage` (по умолчанию это супер-администратор)
 2. Перейдите в раздел **Система → Роли и права**
 3. Вы увидите предустановленные роли:
    - Супер Администратор (полные права)

@@ -55,6 +55,12 @@ class Company extends Model
         return $this->hasMany(Bank::class)->orderBy('sort_order');
     }
 
+    // Лицензии компании (множественные изображения)
+    public function licenses(): HasMany
+    {
+        return $this->hasMany(CompanyLicense::class)->orderBy('sort_order');
+    }
+
     // Логины и пароли
     public function credentials(): HasOne
     {
@@ -77,6 +83,10 @@ class Company extends Model
             return true;
         }
 
+        if ($user->hasAnyPermission(['companies.edit', 'companies.manage'])) {
+            return true;
+        }
+
         // Модератор компании может редактировать
         if ($this->moderator_id === $user->id) {
             return true;
@@ -93,7 +103,21 @@ class Company extends Model
 
     public function canUserView(User $user): bool
     {
-        return true;
+        if ($user->role === User::ROLE_SUPER_ADMIN) {
+            return true;
+        }
+
+        if ($user->hasAnyPermission(['companies.view', 'companies.manage'])) {
+            return true;
+        }
+
+        if ($this->moderator_id === $user->id) {
+            return true;
+        }
+
+        return $this->accessUsers()
+            ->where('user_id', $user->id)
+            ->exists();
     }
 
     public function canUserViewCredentials(User $user): bool
@@ -111,10 +135,19 @@ class Company extends Model
         // Проверяем дополнительных модераторов с доступом к редактированию
         $hasAccess = $this->accessUsers()
             ->where('user_id', $user->id)
-            ->where('access_type', 'edit')
+            ->whereIn('access_type', ['edit', 'view'])
             ->exists();
 
-        return $hasAccess;
+        if ($hasAccess) {
+            return true;
+        }
+
+        return $user->hasAnyPermission([
+            'company-credentials.view',
+            'company-credentials.edit',
+            'company-credentials.manage',
+            'companies.manage',
+        ]);
     }
 
     public function hasLicenseDetails(): bool

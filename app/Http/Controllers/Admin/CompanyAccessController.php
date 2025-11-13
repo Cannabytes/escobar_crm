@@ -3,21 +3,16 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreCompanyAccessRequest;
 use App\Models\Company;
 use App\Models\CompanyAccess;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 
 class CompanyAccessController extends Controller
 {
-    public function store(Request $request, Company $company): RedirectResponse
+    public function store(StoreCompanyAccessRequest $request, Company $company): RedirectResponse
     {
-        $this->authorize('update', $company);
-
-        $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'access_type' => 'required|in:view,edit',
-        ]);
+        $validated = $request->validated();
 
         CompanyAccess::updateOrCreate(
             [
@@ -54,9 +49,10 @@ class CompanyAccessController extends Controller
      */
     public function removeModerator(Company $company): RedirectResponse
     {
-        // Только супер-админ может удалить главного модератора
-        if (auth()->user()?->role !== \App\Models\User::ROLE_SUPER_ADMIN) {
-            abort(403, __('Только супер-администратор может удалить главного модератора.'));
+        $user = auth()->user();
+
+        if (! $user || ! $user->hasAnyPermission(['companies.manage'])) {
+            abort(403, __('У вас нет прав для удаления главного модератора.'));
         }
 
         $this->authorize('update', $company);

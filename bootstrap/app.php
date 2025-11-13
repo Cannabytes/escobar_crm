@@ -17,9 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission.all' => \App\Http\Middleware\CheckAllPermissions::class,
             'set.locale' => \App\Http\Middleware\SetLocale::class,
         ]);
-        
         // Добавляем middleware для логирования активности пользователей
-        $middleware->append(\App\Http\Middleware\LogUserActivity::class);
+        $middleware->appendToGroup('web', \App\Http\Middleware\LogUserActivity::class);
         $middleware->appendToGroup('web', \App\Http\Middleware\SetLocale::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

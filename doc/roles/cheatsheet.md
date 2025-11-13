@@ -43,8 +43,8 @@ if (auth()->user()->isSuperAdmin()) {
     </li>
 @endif
 
-{{-- Проверка супер-админа --}}
-@if(auth()->user()->isSuperAdmin())
+{{-- Проверка наличия прав на управление ролями --}}
+@if(auth()->user()->hasAnyPermission(['roles.view', 'roles.manage']))
     <li class="menu-item">
         <a href="{{ route('admin.roles.index') }}">Роли</a>
     </li>

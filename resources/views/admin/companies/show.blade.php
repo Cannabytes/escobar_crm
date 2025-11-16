@@ -735,6 +735,10 @@
                       </div>
                     </div>
 
+                    <div class="mb-3">
+                      <h5 class="mb-0 fw-bold">{{ $company->name }}</h5>
+                    </div>
+
                     @if ($bank->details->count())
                         <div class="table-responsive">
                           <table class="table table-sm table-hover mb-0">
@@ -826,8 +830,12 @@
                               <div class="row">
                                 <div class="col-md-6 mb-3">
                                   <label class="form-label">{{ __('Страна') }}</label>
-                                  <input type="text" class="form-control" name="country" 
-                                         value="{{ old('country', $bank->country) }}">
+                                  <select class="form-select" name="country">
+                                    <option value="">— {{ __('Не указано') }} —</option>
+                                    @foreach (config('countries.list', []) as $code => $name)
+                                      <option value="{{ $code }}" {{ old('country', $bank->country) == $code ? 'selected' : '' }}>{{ __($name) }}</option>
+                                    @endforeach
+                                  </select>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                   <label class="form-label">{{ __('Код банка') }}</label>
@@ -916,11 +924,9 @@
                                 <label class="form-label">{{ __('Валюта') }}</label>
                                 <select class="form-select" name="currency">
                                   <option value="">— {{ __('Не указано') }} —</option>
-                                  <option value="USD">USD</option>
-                                  <option value="EUR">EUR</option>
-                                  <option value="GBP">GBP</option>
-                                  <option value="AED">AED</option>
-                                  <option value="CHF">CHF</option>
+                                  @foreach (config('currencies.list', []) as $code => $label)
+                                    <option value="{{ $code }}">{{ $label }}</option>
+                                  @endforeach
                                 </select>
                               </div>
 
@@ -987,11 +993,9 @@
                                 <label class="form-label">{{ __('Валюта') }}</label>
                                 <select class="form-select" name="currency">
                                   <option value="">— {{ __('Не указано') }} —</option>
-                                  <option value="USD" {{ $detail->currency === 'USD' ? 'selected' : '' }}>USD</option>
-                                  <option value="EUR" {{ $detail->currency === 'EUR' ? 'selected' : '' }}>EUR</option>
-                                  <option value="GBP" {{ $detail->currency === 'GBP' ? 'selected' : '' }}>GBP</option>
-                                  <option value="AED" {{ $detail->currency === 'AED' ? 'selected' : '' }}>AED</option>
-                                  <option value="CHF" {{ $detail->currency === 'CHF' ? 'selected' : '' }}>CHF</option>
+                                  @foreach (config('currencies.list', []) as $code => $label)
+                                    <option value="{{ $code }}" {{ $detail->currency === $code ? 'selected' : '' }}>{{ $label }}</option>
+                                  @endforeach
                                 </select>
                               </div>
 
@@ -1454,8 +1458,12 @@
           <div class="row">
             <div class="col-md-6 mb-3">
               <label class="form-label">{{ __('Страна') }}</label>
-              <input type="text" class="form-control" name="country" 
-                     placeholder="напр. Украина">
+              <select class="form-select" name="country">
+                <option value="">— {{ __('Не указано') }} —</option>
+                @foreach (config('countries.list', []) as $code => $name)
+                  <option value="{{ $code }}">{{ __($name) }}</option>
+                @endforeach
+              </select>
             </div>
             <div class="col-md-6 mb-3">
               <label class="form-label">{{ __('Код банка') }}</label>
@@ -1545,7 +1553,12 @@
             </div>
             <div class="col-md-6 mb-3">
               <label class="form-label required">{{ __('Страна') }}</label>
-              <input type="text" class="form-control" name="country" required>
+              <select class="form-select" name="country" required>
+                <option value="">{{ __('Выберите страну') }}</option>
+                @foreach (config('countries.list', []) as $code => $name)
+                  <option value="{{ $code }}">{{ __($name) }}</option>
+                @endforeach
+              </select>
             </div>
           </div>
 
@@ -1559,11 +1572,9 @@
             <div class="col-md-4 mb-3">
               <label class="form-label required">{{ __('Валюта') }}</label>
               <select class="form-select" name="currency" required>
-                <option value="USD">USD</option>
-                <option value="EUR">EUR</option>
-                <option value="GBP">GBP</option>
-                <option value="AED">AED</option>
-                <option value="CHF">CHF</option>
+                @foreach (config('currencies.list', []) as $code => $label)
+                  <option value="{{ $code }}">{{ $label }}</option>
+                @endforeach
               </select>
             </div>
             <div class="col-md-8 mb-3">
@@ -1734,7 +1745,6 @@
   }
   
   #addAccessModal .modal-content {
-    background-color: #fff !important;
     opacity: 1 !important;
   }
   

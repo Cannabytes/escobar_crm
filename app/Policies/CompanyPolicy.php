@@ -16,12 +16,23 @@ class CompanyPolicy
             return true;
         }
 
-        return $user->hasAnyPermission([
+        // Проверяем разрешения
+        if ($user->hasAnyPermission([
             'companies.view',
             'companies.manage',
             'companies.create',
             'companies.edit',
-        ]);
+        ])) {
+            return true;
+        }
+
+        // Проверяем, связан ли пользователь с какой-либо компанией
+        // (является модератором или имеет доступ через accessUsers)
+        return Company::where('moderator_id', $user->id)
+            ->orWhereHas('accessUsers', function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })
+            ->exists();
     }
 
     public function view(User $user, Company $company): bool

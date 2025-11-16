@@ -24,9 +24,27 @@ class CompanyController extends Controller
 
     public function index(): View
     {
-        $companies = Company::with(['moderator', 'accessUsers'])
-            ->latest()
-            ->paginate(20);
+        $user = auth()->user();
+        
+        $query = Company::with(['moderator', 'accessUsers']);
+
+        // Если пользователь не супер-админ и не имеет общих разрешений,
+        // показываем только компании, к которым у него есть доступ
+        if (!$user->isSuperAdmin() && !$user->hasAnyPermission([
+            'companies.view',
+            'companies.manage',
+            'companies.create',
+            'companies.edit',
+        ])) {
+            $query->where(function ($q) use ($user) {
+                $q->where('moderator_id', $user->id)
+                    ->orWhereHas('accessUsers', function ($subQuery) use ($user) {
+                        $subQuery->where('user_id', $user->id);
+                    });
+            });
+        }
+
+        $companies = $query->latest()->paginate(20);
 
         return view('admin.companies.index', compact('companies'));
     }

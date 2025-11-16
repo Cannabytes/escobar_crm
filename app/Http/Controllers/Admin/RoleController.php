@@ -158,12 +158,12 @@ class RoleController extends Controller
 
             return redirect()
                 ->route('admin.roles.show', $role)
-                ->with('status', 'Роль успешно обновлена.');
+                ->with('status', __('Роль успешно обновлена.'));
         } catch (\Exception $e) {
             return redirect()
                 ->back()
                 ->withInput()
-                ->with('error', 'Ошибка при обновлении роли: ' . $e->getMessage());
+                ->with('error', __('Ошибка при обновлении роли: :message', ['message' => $e->getMessage()]));
         }
     }
 

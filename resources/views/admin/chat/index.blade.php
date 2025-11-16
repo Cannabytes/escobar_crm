@@ -65,7 +65,7 @@
       <div class="col app-chat-sidebar-left app-sidebar overflow-hidden" id="app-chat-sidebar-left">
         <div
           class="chat-sidebar-left-user sidebar-header d-flex flex-column justify-content-center align-items-center flex-wrap px-6 pt-12">
-          <div class="avatar avatar-xl avatar-online chat-sidebar-avatar">
+          <div class="avatar avatar-xl  chat-sidebar-avatar">
             <img src="{{ $currentUser->avatar_url }}" alt="Avatar" class="rounded-circle" />
             </div>
           <h5 class="mt-4 mb-0">{{ $currentUser->name }}</h5>
@@ -185,7 +185,7 @@
         <div class="sidebar-header h-px-75 px-5 border-bottom d-flex align-items-center">
           <div class="d-flex align-items-center me-6 me-lg-0">
             <div
-              class="flex-shrink-0 avatar avatar-online me-4"
+              class="flex-shrink-0 avatar  me-4"
               data-bs-toggle="sidebar"
               data-overlay="app-overlay-ex"
               data-target="#app-chat-sidebar-left">
@@ -260,7 +260,7 @@
                   data-bs-toggle="sidebar"
                   data-overlay
                   data-target="#app-chat-contacts"></i>
-                <div class="flex-shrink-0 avatar avatar-online">
+                <div class="flex-shrink-0 avatar ">
                   <img
                     src="{{ url('public/vendor/vuexy/assets/img/avatars/4.png') }}"
                     alt="Avatar"
@@ -352,7 +352,7 @@
       <div class="col app-chat-sidebar-right app-sidebar overflow-hidden" id="app-chat-sidebar-right">
         <div
           class="sidebar-header d-flex flex-column justify-content-center align-items-center flex-wrap px-6 pt-12">
-          <div class="avatar avatar-xl avatar-online chat-sidebar-avatar">
+          <div class="avatar avatar-xl  chat-sidebar-avatar">
             <img src="{{ url('public/vendor/vuexy/assets/img/avatars/4.png') }}" alt="Avatar" class="rounded-circle" />
     </div>
           <h5 class="mt-4 mb-0">{{ __('Загрузка...') }}</h5>
@@ -744,7 +744,10 @@
 
         const textElement = document.getElementById('new-message-text');
         if (textElement) {
-          textElement.textContent = `Получено ${count} новое${count > 1 ? 'их' : 'ое'} сообщение${count > 1 ? 'ий' : 'ие'}!`;
+          const messageText = count === 1 
+            ? '{{ __("Получено новое сообщение!") }}'
+            : `{{ __('Получено :count новых сообщений!', ['count' => '']) }}`.replace(':count', count);
+          textElement.textContent = messageText;
         }
 
         // Auto-hide after 3 seconds
@@ -1044,7 +1047,7 @@
         createRoomBtn.id = 'create-public-room-btn';
         createRoomBtn.innerHTML = `
           <a class="d-flex align-items-center">
-            <div class="flex-shrink-0 avatar avatar-online">
+            <div class="flex-shrink-0 avatar ">
               <span class="avatar-initial rounded-circle bg-label-success">
                 <i class="icon-base ti tabler-plus icon-20px"></i>
               </span>
@@ -1068,7 +1071,7 @@
             roomItem.className = 'chat-contact-list-item';
             roomItem.innerHTML = `
               <a class="d-flex align-items-center">
-                <div class="flex-shrink-0 avatar avatar-online">
+                <div class="flex-shrink-0 avatar ">
                   <span class="avatar-initial rounded-circle bg-label-info">${(room.name || 'Ч').charAt(0).toUpperCase()}</span>
                 </div>
                 <div class="chat-contact-info flex-grow-1 ms-4">
@@ -1513,7 +1516,7 @@
               roomItem.className = 'chat-contact-list-item';
               roomItem.innerHTML = `
                 <a class="d-flex align-items-center">
-                  <div class="flex-shrink-0 avatar avatar-online">
+                  <div class="flex-shrink-0 avatar ">
                     <span class="avatar-initial rounded-circle bg-label-primary">${roomName.charAt(0).toUpperCase()}</span>
                   </div>
                   <div class="chat-contact-info flex-grow-1 ms-4">

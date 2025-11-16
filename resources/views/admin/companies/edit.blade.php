@@ -115,23 +115,9 @@
                 <select class="form-select select2 @error('country') is-invalid @enderror" 
                         id="country" name="country" required>
                   <option value="">{{ __('Выберите страну') }}</option>
-                  @php
-                    $countries = [
-                      'UAE' => __('ОАЭ'),
-                      'Cyprus' => __('Кипр'),
-                      'Malta' => __('Мальта'),
-                      'Seychelles' => __('Сейшелы'),
-                      'BVI' => __('BVI'),
-                      'USA' => __('США'),
-                      'UK' => __('Великобритания'),
-                      'Singapore' => __('Сингапур'),
-                      'Hong Kong' => __('Гонконг'),
-                      'Other' => __('Другая'),
-                    ];
-                  @endphp
-                  @foreach ($countries as $code => $name)
+                  @foreach (config('countries.list', []) as $code => $name)
                     <option value="{{ $code }}" {{ old('country', $company->country) == $code ? 'selected' : '' }}>
-                      {{ $name }}
+                      {{ __($name) }}
                     </option>
                   @endforeach
                 </select>

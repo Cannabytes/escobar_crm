@@ -12,7 +12,7 @@ class CurrencyRateService
     private const ENDPOINT = 'https://www.cbr-xml-daily.ru/daily_json.js';
     private const CACHE_KEY = 'system.currency_rates.cbr';
     private const CACHE_LAST_SUCCESS_KEY = 'system.currency_rates.cbr.last_successful';
-    private const CACHE_TTL_SECONDS = 300;
+    private const CACHE_TTL_SECONDS = 60; // 60 сек
     private const HTTP_TIMEOUT_SECONDS = 5;
 
     /**
@@ -72,8 +72,20 @@ class CurrencyRateService
             ];
         }
 
+        // Используем время кеширования для отображения, если есть, иначе время из API
+        $updatedAt = null;
+        if (isset($payload['_cached_at'])) {
+            try {
+                $updatedAt = Carbon::parse($payload['_cached_at']);
+            } catch (\Throwable) {
+                $updatedAt = $this->resolveUpdatedAt($payload);
+            }
+        } else {
+            $updatedAt = $this->resolveUpdatedAt($payload);
+        }
+
         return [
-            'updated_at' => $this->resolveUpdatedAt($payload),
+            'updated_at' => $updatedAt,
             'rates' => $rates,
         ];
     }
@@ -85,7 +97,32 @@ class CurrencyRateService
     {
         $payload = Cache::get(self::CACHE_KEY);
 
+        // Проверяем возраст данных, если они есть в кеше
         if (is_array($payload)) {
+            // Проверяем время кеширования (когда МЫ закешировали данные)
+            $cachedAt = null;
+            if (isset($payload['_cached_at'])) {
+                try {
+                    $cachedAt = Carbon::parse($payload['_cached_at']);
+                } catch (\Throwable) {
+                    $cachedAt = null;
+                }
+            }
+            
+            // Если нет метки времени кеширования или данные старше TTL, обновляем
+            if (! $cachedAt || now()->diffInSeconds($cachedAt) > self::CACHE_TTL_SECONDS) {
+                // Кеш устарел или нет метки времени, обновляем данные
+                $data = $this->downloadPayload();
+                
+                if (! empty($data)) {
+                    $this->storePayload($data);
+                    return $data;
+                }
+                
+                // Если не удалось обновить, возвращаем старые данные
+                return $payload;
+            }
+            
             return $payload;
         }
 
@@ -129,8 +166,15 @@ class CurrencyRateService
      */
     private function storePayload(array $data): void
     {
+        // Добавляем метку времени кеширования
+        $data['_cached_at'] = now()->toIso8601String();
+        
         Cache::put(self::CACHE_KEY, $data, self::CACHE_TTL_SECONDS);
-        Cache::forever(self::CACHE_LAST_SUCCESS_KEY, $data);
+        
+        // Для fallback тоже добавляем метку времени
+        $fallbackData = $data;
+        $fallbackData['_cached_at'] = now()->toIso8601String();
+        Cache::forever(self::CACHE_LAST_SUCCESS_KEY, $fallbackData);
     }
 
     /**

@@ -133,9 +133,10 @@ class Company extends Model
         }
 
         // Проверяем дополнительных модераторов с доступом к редактированию
+        // Пользователи с правами "только чтение" (view) не могут видеть учетные данные
         $hasAccess = $this->accessUsers()
             ->where('user_id', $user->id)
-            ->whereIn('access_type', ['edit', 'view'])
+            ->where('access_type', 'edit')
             ->exists();
 
         if ($hasAccess) {

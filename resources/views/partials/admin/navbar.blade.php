@@ -59,7 +59,7 @@
             </div>
             @if ($updatedDiff)
               <div class="mt-1">
-                {{ __('Обновлено :time назад', ['time' => $updatedDiff]) }}
+                {{ __('Обновлено :time', ['time' => $updatedDiff]) }}
               </div>
             @endif
           </div>
@@ -98,7 +98,7 @@
       <li class="nav-item navbar-dropdown dropdown-user dropdown">
         <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown">
           <div class="avatar {{ $user->isOnline() ? 'avatar-online' : '' }}">
-            <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="w-px-40 h-auto rounded-circle">
+            <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="w-px-40 rounded-circle">
           </div>
         </a>
         <ul class="dropdown-menu dropdown-menu-end">
@@ -107,7 +107,7 @@
               <div class="d-flex">
                 <div class="flex-shrink-0 me-3">
                   <div class="avatar {{ $user->isOnline() ? 'avatar-online' : '' }}">
-                    <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="w-px-40 h-auto rounded-circle">
+                    <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="w-px-40  rounded-circle">
                   </div>
                 </div>
                 <div class="flex-grow-1">

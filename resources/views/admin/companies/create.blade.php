@@ -259,16 +259,9 @@
                 <select class="form-select select2 @error('country') is-invalid @enderror"
                         id="country" name="country">
                   <option value="">{{ __('Выберите страну') }}</option>
-                  <option value="UAE" {{ old('country') == 'UAE' ? 'selected' : '' }}>{{ __('ОАЭ') }}</option>
-                  <option value="Cyprus" {{ old('country') == 'Cyprus' ? 'selected' : '' }}>{{ __('Кипр') }}</option>
-                  <option value="Malta" {{ old('country') == 'Malta' ? 'selected' : '' }}>{{ __('Мальта') }}</option>
-                  <option value="Seychelles" {{ old('country') == 'Seychelles' ? 'selected' : '' }}>{{ __('Сейшелы') }}</option>
-                  <option value="BVI" {{ old('country') == 'BVI' ? 'selected' : '' }}>{{ __('BVI') }}</option>
-                  <option value="USA" {{ old('country') == 'USA' ? 'selected' : '' }}>{{ __('США') }}</option>
-                  <option value="UK" {{ old('country') == 'UK' ? 'selected' : '' }}>{{ __('Великобритания') }}</option>
-                  <option value="Singapore" {{ old('country') == 'Singapore' ? 'selected' : '' }}>{{ __('Сингапур') }}</option>
-                  <option value="Hong Kong" {{ old('country') == 'Hong Kong' ? 'selected' : '' }}>{{ __('Гонконг') }}</option>
-                  <option value="Other" {{ old('country') == 'Other' ? 'selected' : '' }}>{{ __('Другая') }}</option>
+                  @foreach (config('countries.list', []) as $code => $name)
+                    <option value="{{ $code }}" {{ old('country') == $code ? 'selected' : '' }}>{{ __($name) }}</option>
+                  @endforeach
                 </select>
                 @error('country')
                   <div class="invalid-feedback">{{ $message }}</div>

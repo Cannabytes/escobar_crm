@@ -609,7 +609,7 @@
                       <i class="icon-base ti tabler-building-bank me-2"></i>
                       <strong>{{ $bank->name }}</strong>
                       @if ($bank->country)
-                        <span class="badge bg-label-secondary ms-2">{{ $bank->country }}</span>
+                        <span class="badge bg-label-warning ms-2 fw-bold">{{ $bank->country }}</span>
                       @endif
                       @if ($bank->details->count())
                         <span class="badge bg-label-info ms-2" id="bank-details-count-{{ $bank->id }}">
@@ -662,7 +662,7 @@
                       <div class="border rounded p-3">
                         <div class="d-flex align-items-center mb-3">
                           <i class="icon-base ti tabler-key me-2 text-primary"></i>
-                          <h6 class="mb-0">{{ __('Доступ к онлайн-банку') }}</h6>
+                          <h6 class="mb-0 fw-bold">{{ __('Доступ к онлайн-банку') }}</h6>
                         </div>
                         @if($canViewBankCredentials)
                           @if($hasCredentialData)
@@ -676,7 +676,7 @@
                               <div class="col-md-6">
                                 @foreach ($leftColumn as $item)
                                   <div class="mb-3">
-                                    <small class="text-muted d-block mb-1">{{ $item['label'] }}</small>
+                                    <small class="text-muted d-block mb-1 fw-bold">{{ $item['label'] }}</small>
                                     <div class="fw-medium">
                                       @switch($item['key'])
                                         @case('online_banking_url')
@@ -701,7 +701,7 @@
                               <div class="col-md-6">
                                 @foreach ($rightColumn as $item)
                                   <div class="mb-3">
-                                    <small class="text-muted d-block mb-1">{{ $item['label'] }}</small>
+                                    <small class="text-muted d-block mb-1 fw-bold">{{ $item['label'] }}</small>
                                     <div class="fw-medium">
                                       @switch($item['key'])
                                         @case('online_banking_url')

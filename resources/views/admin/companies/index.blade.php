@@ -141,7 +141,7 @@
                           @endif
                           @if ($canDeleteCompany)
                             <form action="{{ route('admin.companies.destroy', $company) }}" method="POST" 
-                                  onsubmit="return confirm('{{ __('Вы уверены?') }}')">
+                                  class="delete-company-form">
                               @csrf
                               @method('DELETE')
                               <button type="submit" class="dropdown-item text-danger">
@@ -168,4 +168,54 @@
     </div>
   </div>
 @endsection
+
+@push('styles')
+  <link rel="stylesheet" href="{{ asset('vendor/vuexy/vendor/libs/sweetalert2/sweetalert2.css') }}">
+@endpush
+
+@push('scripts')
+  <script src="{{ asset('vendor/vuexy/vendor/libs/sweetalert2/sweetalert2.js') }}"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Обработка удаления компании через SweetAlert2
+      document.querySelectorAll('.delete-company-form').forEach(form => {
+        form.addEventListener('submit', async function(e) {
+          e.preventDefault();
+          
+          const formElement = this;
+          const companyName = formElement.closest('tr')?.querySelector('td:nth-child(2) a')?.textContent?.trim() || '{{ __('компанию') }}';
+          
+          // Подтверждение удаления через SweetAlert2
+          let confirmed = false;
+          
+          try {
+            if (typeof Swal !== 'undefined' && Swal.fire) {
+              const result = await Swal.fire({
+                title: '{{ __('Удалить компанию?') }}',
+                text: '{{ __('Вы уверены, что хотите удалить эту компанию? Это действие нельзя отменить.') }}',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: '{{ __('Да, удалить') }}',
+                cancelButtonText: '{{ __('Отмена') }}',
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                reverseButtons: true
+              });
+              confirmed = result.isConfirmed;
+            } else {
+              confirmed = confirm('{{ __('Вы уверены, что хотите удалить эту компанию?') }}');
+            }
+          } catch (error) {
+            console.error('Ошибка при показе диалога подтверждения:', error);
+            confirmed = confirm('{{ __('Вы уверены, что хотите удалить эту компанию?') }}');
+          }
+          
+          if (confirmed) {
+            formElement.submit();
+          }
+        });
+      });
+    });
+  </script>
+@endpush
 

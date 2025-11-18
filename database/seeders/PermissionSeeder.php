@@ -117,6 +117,18 @@ class PermissionSeeder extends Seeder
             ],
             [
                 'group' => [
+                    'name' => 'Ledger',
+                    'slug' => 'ledger',
+                    'description' => 'Управление кошельками и сетями',
+                    'sort_order' => 66,
+                ],
+                'permissions' => [
+                    ['name' => 'Просмотр Ledger', 'slug' => 'ledger.view', 'type' => 'view', 'sort_order' => 1],
+                    ['name' => 'Управление Ledger', 'slug' => 'ledger.manage', 'type' => 'manage', 'sort_order' => 2],
+                ],
+            ],
+            [
+                'group' => [
                     'name' => 'Роли и разрешения',
                     'slug' => 'roles',
                     'description' => 'Управление ролями и разрешениями',

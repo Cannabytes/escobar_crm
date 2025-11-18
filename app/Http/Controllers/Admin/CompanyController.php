@@ -68,12 +68,6 @@ class CompanyController extends Controller
                 'moderator_id' => $request->integer('moderator_id'),
             ];
 
-            if ($request->hasFile('license_file')) {
-                $file = $request->file('license_file');
-                $path = $file->store('licenses', 'public');
-                $data['license_file'] = $path;
-            }
-
             Company::create($data);
         });
 
@@ -118,17 +112,6 @@ class CompanyController extends Controller
                 'country' => $request->string('country')->value(),
                 'moderator_id' => $request->integer('moderator_id'),
             ];
-
-            if ($request->hasFile('license_file')) {
-                // Удаляем старый файл
-                if ($company->license_file) {
-                    Storage::disk('public')->delete($company->license_file);
-                }
-
-                $file = $request->file('license_file');
-                $path = $file->store('licenses', 'public');
-                $data['license_file'] = $path;
-            }
 
             $company->update($data);
         });

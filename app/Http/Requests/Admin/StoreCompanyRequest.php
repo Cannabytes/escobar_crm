@@ -31,7 +31,6 @@ class StoreCompanyRequest extends FormRequest
             'name' => ['required', 'string', 'max:191'],
             'country' => ['required', 'string', 'max:100'],
             'moderator_id' => ['required', 'exists:users,id'],
-            'license_file' => ['nullable', 'file', 'mimes:jpg,jpeg,png', 'max:5120'],
         ];
     }
 
@@ -41,7 +40,6 @@ class StoreCompanyRequest extends FormRequest
             'name' => __('название компании'),
             'country' => __('страна'),
             'moderator_id' => __('модератор'),
-            'license_file' => __('файл лицензии'),
         ];
     }
 }

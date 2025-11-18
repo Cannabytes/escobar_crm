@@ -366,6 +366,44 @@
           }
         });
       });
+
+      // Подтверждение удаления банка через SweetAlert2
+      document.querySelectorAll('.delete-bank-form').forEach(form => {
+        form.addEventListener('submit', async function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+
+          const formElement = this;
+          const bankName = formElement.getAttribute('data-bank-name') || '';
+          let confirmed = false;
+
+          try {
+            if (typeof Swal !== 'undefined' && Swal.fire) {
+              const result = await Swal.fire({
+                title: '{{ __('Удалить банк со всеми реквизитами?') }}',
+                text: bankName ? `${bankName}. {{ __('Это действие нельзя отменить') }}` : '{{ __('Это действие нельзя отменить') }}',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: '{{ __('Да, удалить') }}',
+                cancelButtonText: '{{ __('Отмена') }}',
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                reverseButtons: true
+              });
+              confirmed = result.isConfirmed;
+            } else {
+              confirmed = confirm('{{ __('Удалить банк со всеми реквизитами?') }}');
+            }
+          } catch (error) {
+            console.error('Ошибка при показе диалога подтверждения:', error);
+            confirmed = confirm('{{ __('Удалить банк со всеми реквизитами?') }}');
+          }
+
+          if (confirmed) {
+            formElement.submit();
+          }
+        });
+      });
     });
   </script>
 @endpush
@@ -641,8 +679,8 @@
                             <i class="ti tabler-pencil"></i>
                           </button>
                           <form action="{{ route('admin.companies.banks.destroy', [$company, $bank]) }}" 
-                                method="POST" class="d-inline" 
-                                onsubmit="return confirm('{{ __('Удалить банк со всеми реквизитами?') }}')"
+                                method="POST" class="d-inline delete-bank-form"
+                                data-bank-name="{{ $bank->name }}"
                                 onclick="event.stopPropagation()">
                             @csrf
                             @method('DELETE')

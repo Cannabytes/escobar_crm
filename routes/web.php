@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\CompanyBankAccountController;
 use App\Http\Controllers\Admin\CompanyBankController;
 use App\Http\Controllers\Admin\CompanyBankDetailController;
 use App\Http\Controllers\Admin\CompanyController;
+use App\Http\Controllers\Admin\LedgerController;
 use App\Http\Controllers\Admin\PhoneContactController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
@@ -102,6 +103,10 @@ Route::prefix('admin')->name('admin.')->middleware(['ensure.installed', 'auth'])
     Route::post('/users/phones', [PhoneContactController::class, 'store'])->name('users.phones.store');
     Route::put('/users/phones/{phoneContact}', [PhoneContactController::class, 'update'])->name('users.phones.update');
     Route::delete('/users/phones/{phoneContact}', [PhoneContactController::class, 'destroy'])->name('users.phones.destroy');
+
+    // Ledger
+    Route::resource('ledger', LedgerController::class)
+        ->only(['index', 'store', 'update', 'destroy']);
     Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
     Route::post('/users', [UserController::class, 'store'])->name('users.store');
     Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');

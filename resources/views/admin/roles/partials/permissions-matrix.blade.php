@@ -61,6 +61,14 @@
       ],
     ],
     [
+      'title' => __('ledger.page_title'),
+      'icon' => 'ti tabler-wallet',
+      'permissions' => [
+        'ledger.view' => __('ledger.permissions.view'),
+        'ledger.manage' => __('ledger.permissions.manage'),
+      ],
+    ],
+    [
       'title' => __('Роли и права'),
       'icon' => 'ti tabler-shield',
       'permissions' => [

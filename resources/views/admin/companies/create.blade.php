@@ -240,7 +240,7 @@
           </small>
         </div>
         <div class="card-body">
-          <form id="company-create-form" action="{{ route('admin.companies.store') }}" method="POST" enctype="multipart/form-data">
+          <form id="company-create-form" action="{{ route('admin.companies.store') }}" method="POST">
             @csrf
 
             <div class="row">
@@ -286,18 +286,6 @@
                 @enderror
                 <small class="text-muted">
                   {{ __('Модератор будет вести эту компанию и иметь полный доступ к её данным') }}
-                </small>
-              </div>
-
-              <div class="col-md-6 mb-3">
-                <label for="license_file" class="form-label">{{ __('Лицензия компании') }}</label>
-                <input type="file" class="form-control @error('license_file') is-invalid @enderror" 
-                       id="license_file" name="license_file" accept=".jpg,.jpeg,.png">
-                @error('license_file')
-                  <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-                <small class="text-muted">
-                  {{ __('Форматы: JPG, PNG. Максимальный размер: 5 МБ') }}
                 </small>
               </div>
             </div>

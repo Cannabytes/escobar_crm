@@ -143,6 +143,18 @@
     @endif
     @endif
 
+    @if(auth()->user()->hasAnyPermission(['ledger.view', 'ledger.manage']))
+    <li class="menu-header small text-uppercase">
+      <span class="menu-header-text">{{ __('ledger.page_title') }}</span>
+    </li>
+    <li class="menu-item {{ $currentRoute === 'admin.ledger.index' ? 'active' : '' }}">
+      <a href="{{ route('admin.ledger.index') }}" class="menu-link">
+        <i class="menu-icon icon-base ti tabler-wallet"></i>
+        <div>{{ __('ledger.page_title') }}</div>
+      </a>
+    </li>
+    @endif
+
     @if(auth()->user()->hasAnyPermission(['logs.view', 'roles.view']) || auth()->user()->isSuperAdmin())
     <li class="menu-header small text-uppercase">
       <span class="menu-header-text">{{ __('Система') }}</span>

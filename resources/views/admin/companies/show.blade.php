@@ -12,13 +12,13 @@
 @section('title', $company->name)
 
 @push('styles')
-  <link rel="stylesheet" href="{{ url('public/vendor/vuexy/vendor/libs/select2/select2.css') }}">
-  <link rel="stylesheet" href="{{ url('public/vendor/vuexy/vendor/libs/sweetalert2/sweetalert2.css') }}">
+  <link rel="stylesheet" href="{{ asset('vendor/vuexy/vendor/libs/select2/select2.css') }}">
+  <link rel="stylesheet" href="{{ asset('vendor/vuexy/vendor/libs/sweetalert2/sweetalert2.css') }}">
 @endpush
 
 @push('scripts')
-  <script src="{{ url('public/vendor/vuexy/vendor/libs/select2/select2.js') }}"></script>
-  <script src="{{ url('public/vendor/vuexy/vendor/libs/sweetalert2/sweetalert2.js') }}"></script>
+  <script src="{{ asset('vendor/vuexy/vendor/libs/select2/select2.js') }}"></script>
+  <script src="{{ asset('vendor/vuexy/vendor/libs/sweetalert2/sweetalert2.js') }}"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       if (typeof $ !== 'undefined' && $.fn.select2) {
@@ -402,7 +402,7 @@
                 @foreach($company->licenses as $license)
                   <div class="col-6 col-md-4" id="license-item-{{ $license->id }}">
                     <div class="position-relative license-image-wrapper">
-                      <img src="{{ url('public/storage/' . $license->file_path) }}" 
+                      <img src="{{ asset('storage/' . $license->file_path) }}" 
                            alt="{{ __('Лицензия') }}" 
                            class="img-fluid rounded cursor-pointer license-thumbnail"
                            style="width: 100%; height: 150px; object-fit: cover;"
@@ -1365,7 +1365,7 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body text-center" style="max-height: 80vh; overflow-y: auto;">
-          <img src="{{ url('public/storage/' . $license->file_path) }}" 
+          <img src="{{ asset('storage/' . $license->file_path) }}" 
                alt="{{ __('Лицензия') }}" 
                class="img-fluid"
                style="max-width: 100%; height: auto;">
@@ -1374,7 +1374,7 @@
           <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">
             {{ __('Закрыть') }}
           </button>
-          <a href="{{ url('public/storage/' . $license->file_path) }}" 
+          <a href="{{ asset('storage/' . $license->file_path) }}" 
              class="btn btn-primary" download="{{ $license->original_name }}">
             <i class="icon-base ti tabler-download me-1"></i> {{ __('Скачать') }}
           </a>

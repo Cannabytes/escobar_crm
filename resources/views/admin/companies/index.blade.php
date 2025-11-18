@@ -103,14 +103,13 @@
                   </td>
                   <td>
                     @if ($company->expiry_date)
-                      <div>{{ __('До :date', ['date' => $company->expiry_date->format('d.m.Y')]) }}</div>
                       @php
                         $daysLeft = (int) now()->startOfDay()->diffInDays($company->expiry_date->endOfDay(), false);
                       @endphp
                       @if ($daysLeft < 0)
                         <span class="text-danger">{{ __('Срок истёк') }}</span>
-                      @elseif ($daysLeft < 40)
-                        <span class="text-danger">{{ trans_choice(':count день остался|:count дня осталось|:count дней осталось', $daysLeft, ['count' => $daysLeft]) }}</span>
+                      @else
+                        <span class="{{ $daysLeft < 40 ? 'text-danger' : '' }}">{{ trans_choice(':count день остался|:count дня осталось|:count дней осталось', $daysLeft, ['count' => $daysLeft]) }}</span>
                       @endif
                     @else
                       <span class="text-muted">—</span>
@@ -121,21 +120,20 @@
                       @if ($canUpdateCompany && ! $company->hasLicenseDetails())
                         <a href="{{ route('admin.companies.show', $company) }}?open_license=1"
                            class="btn btn-sm btn-warning">
-                          <i class="mdi mdi-file-edit-outline me-1"></i>
                           {{ __('Заполните данные компании') }}
                         </a>
                       @endif
                       <div class="dropdown">
                         <button type="button" class="btn btn-sm btn-icon dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                          <i class="mdi mdi-dots-vertical"></i>
+                          <i class="ti tabler-edit me-1"></i>
                         </button>
                         <div class="dropdown-menu dropdown-menu-end">
                           <a class="dropdown-item" href="{{ route('admin.companies.show', $company) }}">
-                            <i class="mdi mdi-eye-outline me-1"></i> {{ __('Просмотр') }}
+                            {{ __('Просмотр') }}
                           </a>
                           @if ($canUpdateCompany)
                             <a class="dropdown-item" href="{{ route('admin.companies.edit', $company) }}">
-                              <i class="mdi mdi-pencil-outline me-1"></i> {{ __('Редактировать') }}
+                               {{ __('Редактировать') }}
                             </a>
                           @endif
                           @if ($canUpdateCompany || $canDeleteCompany)

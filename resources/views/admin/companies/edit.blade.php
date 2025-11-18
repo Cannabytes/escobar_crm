@@ -3,15 +3,15 @@
 @section('title', __('Редактирование компании'))
 
 @push('styles')
-  <link rel="stylesheet" href="{{ url('public/vendor/vuexy/vendor/libs/@form-validation/form-validation.css') }}">
-  <link rel="stylesheet" href="{{ url('public/vendor/vuexy/vendor/libs/select2/select2.css') }}">
+  <link rel="stylesheet" href="{{ asset('vendor/vuexy/vendor/libs/@form-validation/form-validation.css') }}">
+  <link rel="stylesheet" href="{{ asset('vendor/vuexy/vendor/libs/select2/select2.css') }}">
 @endpush
 
 @push('scripts')
-  <script src="{{ url('public/vendor/vuexy/vendor/libs/@form-validation/popular.js') }}"></script>
-  <script src="{{ url('public/vendor/vuexy/vendor/libs/@form-validation/bootstrap5.js') }}"></script>
-  <script src="{{ url('public/vendor/vuexy/vendor/libs/@form-validation/auto-focus.js') }}"></script>
-  <script src="{{ url('public/vendor/vuexy/vendor/libs/select2/select2.js') }}"></script>
+  <script src="{{ asset('vendor/vuexy/vendor/libs/@form-validation/popular.js') }}"></script>
+  <script src="{{ asset('vendor/vuexy/vendor/libs/@form-validation/bootstrap5.js') }}"></script>
+  <script src="{{ asset('vendor/vuexy/vendor/libs/@form-validation/auto-focus.js') }}"></script>
+  <script src="{{ asset('vendor/vuexy/vendor/libs/select2/select2.js') }}"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       if (typeof $ !== 'undefined' && $.fn.select2) {

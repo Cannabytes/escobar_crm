@@ -101,14 +101,14 @@
                       <td>{{ $users->firstItem() + $index }}</td>
                       <td class="fw-medium">
                         <div class="d-flex align-items-center">
-                          <div class="avatar avatar-sm {{ $user->isOnline() ? 'avatar-online' : '' }} me-2">
+                          <div class="avatar avatar-sm {{ $user->isOnline() ? 'avatar-online' : '' }} me-2 flex-shrink-0 d-flex align-items-center">
                             <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="rounded-circle">
                           </div>
                           <div class="d-flex flex-column">
                             @if(auth()->user()?->hasAnyPermission(['users.edit', 'users.manage']))
                               <a
                                 href="{{ route('admin.users.edit', $user) }}"
-                                class="fw-medium text-primary text-decoration-underline"
+                                class="fw-medium text-primary"
                                 title="{{ __('Редактировать пользователя') }}">
                                 {{ $user->name }}
                               </a>

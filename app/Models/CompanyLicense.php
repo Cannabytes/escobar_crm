@@ -24,6 +24,6 @@ class CompanyLicense extends Model
      */
     public function getFileUrlAttribute(): string
     {
-        return url('public/storage/' . $this->file_path);
+        return url('storage/' . $this->file_path);
     }
 }

@@ -4,7 +4,7 @@
   dir="ltr"
   data-skin="default"
   data-bs-theme="light"
-  data-assets-path="{{ url('public/vendor/vuexy/') }}/"
+  data-assets-path="{{ asset('vendor/vuexy') }}/"
   data-template="vertical-menu-template">
   <head>
     <meta charset="utf-8">
@@ -12,33 +12,33 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', config('app.name', 'Laravel'))</title>
 
-    <link rel="icon" type="image/x-icon" href="{{ url('public/vendor/vuexy/img/favicon/favicon.ico') }}">
+    <link rel="icon" type="image/x-icon" href="{{ asset('vendor/vuexy/img/favicon/favicon.ico') }}">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="{{ url('public/vendor/vuexy/vendor/fonts/iconify-icons.css') }}">
+    <link rel="stylesheet" href="{{ asset('vendor/vuexy/vendor/fonts/iconify-icons.css') }}">
     
     <!-- Core CSS -->
-    <link rel="stylesheet" href="{{ url('public/vendor/vuexy/vendor/libs/node-waves/node-waves.css') }}">
-    <link rel="stylesheet" href="{{ url('public/vendor/vuexy/vendor/libs/pickr/pickr-themes.css') }}">
-    <link rel="stylesheet" href="{{ url('public/vendor/vuexy/vendor/css/core.css') }}">
-    <link rel="stylesheet" href="{{ url('public/vendor/vuexy/css/demo.css') }}">
+    <link rel="stylesheet" href="{{ asset('vendor/vuexy/vendor/libs/node-waves/node-waves.css') }}">
+    <link rel="stylesheet" href="{{ asset('vendor/vuexy/vendor/libs/pickr/pickr-themes.css') }}">
+    <link rel="stylesheet" href="{{ asset('vendor/vuexy/vendor/css/core.css') }}">
+    <link rel="stylesheet" href="{{ asset('vendor/vuexy/css/demo.css') }}">
 
     <!-- Vendors CSS -->
-    <link rel="stylesheet" href="{{ url('public/vendor/vuexy/vendor/libs/perfect-scrollbar/perfect-scrollbar.css') }}">
+    <link rel="stylesheet" href="{{ asset('vendor/vuexy/vendor/libs/perfect-scrollbar/perfect-scrollbar.css') }}">
 
     @stack('styles')
 
     <!-- Helpers -->
-    <script src="{{ url('public/vendor/vuexy/vendor/js/helpers.js') }}"></script>
+    <script src="{{ asset('vendor/vuexy/vendor/js/helpers.js') }}"></script>
     <!-- Pickr library for template customizer -->
-    <script src="{{ url('public/vendor/vuexy/vendor/libs/pickr/pickr.js') }}"></script>
+    <script src="{{ asset('vendor/vuexy/vendor/libs/pickr/pickr.js') }}"></script>
     <!-- Template customizer & Theme config files MUST be included after core stylesheets and helpers.js in the <head> section -->
-    <script src="{{ url('public/vendor/vuexy/vendor/js/template-customizer.js') }}"></script>
+    <script src="{{ asset('vendor/vuexy/vendor/js/template-customizer.js') }}"></script>
     <!-- Config: Mandatory theme config file contain global vars & default theme options -->
-    <script src="{{ url('public/vendor/vuexy/js/config.js') }}"></script>
+    <script src="{{ asset('vendor/vuexy/js/config.js') }}"></script>
   </head>
   <body>
     <div class="layout-wrapper layout-content-navbar">
@@ -59,19 +59,6 @@
               @yield('content')
             </div>
 
-            <footer class="content-footer footer bg-footer-theme">
-              <div class="container-xxl d-flex flex-wrap justify-content-between py-2 flex-md-row flex-column">
-                <div class="mb-2 mb-md-0">
-                  © {{ now()->year }}
-                  <span class="fw-semibold">{{ config('app.name', 'Laravel') }}</span>
-                  — {{ __('Панель администрирования компаний') }}
-                </div>
-                <div>
-                  <a href="https://laravel.com" target="_blank" class="footer-link me-4">Laravel</a>
-                  <a href="https://getbootstrap.com" target="_blank" class="footer-link me-4">Bootstrap 5</a>
-                </div>
-              </div>
-            </footer>
 
             <div class="content-backdrop fade"></div>
           </div>
@@ -81,13 +68,13 @@
       <div class="drag-target"></div>
     </div>
 
-    <script src="{{ url('public/vendor/vuexy/vendor/libs/jquery/jquery.js') }}"></script>
-    <script src="{{ url('public/vendor/vuexy/vendor/libs/popper/popper.js') }}"></script>
-    <script src="{{ url('public/vendor/vuexy/vendor/js/bootstrap.js') }}"></script>
-    <script src="{{ url('public/vendor/vuexy/vendor/libs/perfect-scrollbar/perfect-scrollbar.js') }}"></script>
-    <script src="{{ url('public/vendor/vuexy/vendor/libs/node-waves/node-waves.js') }}"></script>
-    <script src="{{ url('public/vendor/vuexy/vendor/js/menu.js') }}"></script>
-    <script src="{{ url('public/vendor/vuexy/js/main.js') }}"></script>
+    <script src="{{ asset('vendor/vuexy/vendor/libs/jquery/jquery.js') }}"></script>
+    <script src="{{ asset('vendor/vuexy/vendor/libs/popper/popper.js') }}"></script>
+    <script src="{{ asset('vendor/vuexy/vendor/js/bootstrap.js') }}"></script>
+    <script src="{{ asset('vendor/vuexy/vendor/libs/perfect-scrollbar/perfect-scrollbar.js') }}"></script>
+    <script src="{{ asset('vendor/vuexy/vendor/libs/node-waves/node-waves.js') }}"></script>
+    <script src="{{ asset('vendor/vuexy/vendor/js/menu.js') }}"></script>
+    <script src="{{ asset('vendor/vuexy/js/main.js') }}"></script>
 
     @stack('scripts')
   </body>

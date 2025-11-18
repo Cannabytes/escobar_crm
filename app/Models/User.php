@@ -232,16 +232,16 @@ class User extends Authenticatable
         $diff = $datetime->diffInMinutes(now());
 
         if ($diff < 60) {
-            return __('users.minutes_ago', ['count' => $diff]);
+            return trans_choice('users.minutes_ago', $diff, ['count' => $diff]);
         }
 
         $hours = floor($diff / 60);
         if ($hours < 24) {
-            return __('users.hours_ago', ['count' => $hours]);
+            return trans_choice('users.hours_ago', $hours, ['count' => $hours]);
         }
 
         $days = floor($hours / 24);
-        return __('users.days_ago', ['count' => $days]);
+        return trans_choice('users.days_ago', $days, ['count' => $days]);
     }
 
     /**
@@ -250,7 +250,7 @@ class User extends Authenticatable
     public function getAvatarUrlAttribute(): string
     {
         if ($this->avatar) {
-            return url('public/storage/' . $this->avatar);
+            return url('storage/' . $this->avatar);
         }
 
         // Генерируем аватар с инициалами через UI Avatars

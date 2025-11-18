@@ -1,18 +1,19 @@
 <?php
 
 return [
-	// Ключ — код страны, значение — отображаемое имя
-	'list' => [
-		'UAE' => 'ОАЭ',
-		'Cyprus' => 'Кипр',
-		'Malta' => 'Мальта',
-		'Seychelles' => 'Сейшелы',
-		'BVI' => 'BVI',
-		'USA' => 'США',
-		'UK' => 'Великобритания',
-		'Singapore' => 'Сингапур',
-		'Hong Kong' => 'Гонконг',
-		'Other' => 'Другая',
-	],
+    // Ключ — код страны, значение — отображаемое имя
+    'list' => [
+        'Belarus'     => 'Belarus',
+        'Belgium'     => 'Belgium',
+        'China'       => 'China',
+        'Germany'     => 'Germany',
+        'Hong Kong'   => 'Hong Kong',
+        'Latvia'      => 'Latvia',
+        'Oman'        => 'Oman',
+        'Russia'      => 'Russia',
+        'Switzerland' => 'Switzerland',
+        'Turkey'      => 'Turkey',
+        'UAE'         => 'UAE',
+        'Ukraine'     => 'Ukraine',
+    ],
 ];
-

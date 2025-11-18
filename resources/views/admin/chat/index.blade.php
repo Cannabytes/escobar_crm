@@ -3,7 +3,7 @@
 @section('title', __('Чат'))
 
 @push('styles')
-  <link rel="stylesheet" href="{{ url('public/vendor/vuexy/vendor/css/pages/app-chat.css') }}">
+  <link rel="stylesheet" href="{{ asset('vendor/vuexy/vendor/css/pages/app-chat.css') }}">
   <style>
     .chat-message-unread .chat-message-text {
       background-color: rgba(255, 193, 7, 0.1) !important;
@@ -262,7 +262,7 @@
                   data-target="#app-chat-contacts"></i>
                 <div class="flex-shrink-0 avatar ">
                   <img
-                    src="{{ url('public/vendor/vuexy/assets/img/avatars/4.png') }}"
+                    src="{{ asset('vendor/vuexy/assets/img/avatars/4.png') }}"
                     alt="Avatar"
                     class="rounded-circle"
                     data-bs-toggle="sidebar"
@@ -353,7 +353,7 @@
         <div
           class="sidebar-header d-flex flex-column justify-content-center align-items-center flex-wrap px-6 pt-12">
           <div class="avatar avatar-xl  chat-sidebar-avatar">
-            <img src="{{ url('public/vendor/vuexy/assets/img/avatars/4.png') }}" alt="Avatar" class="rounded-circle" />
+            <img src="{{ asset('vendor/vuexy/assets/img/avatars/4.png') }}" alt="Avatar" class="rounded-circle" />
     </div>
           <h5 class="mt-4 mb-0">{{ __('Загрузка...') }}</h5>
           <span>{{ __('Статус') }}</span>

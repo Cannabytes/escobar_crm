@@ -26,6 +26,27 @@
         });
       }
 
+      // Переключение видимости пароля
+      document.querySelectorAll('[data-toggle-password]').forEach(toggle => {
+        const targetSelector = toggle.getAttribute('data-toggle-password');
+        const targetInput = document.querySelector(targetSelector);
+
+        if (!targetInput) {
+          return;
+        }
+
+        toggle.addEventListener('click', () => {
+          const isHidden = targetInput.type === 'password';
+          targetInput.type = isHidden ? 'text' : 'password';
+
+          const icon = toggle.querySelector('i');
+          if (icon) {
+            icon.classList.toggle('tabler-eye', isHidden);
+            icon.classList.toggle('tabler-eye-off', !isHidden);
+          }
+        });
+      });
+
       // Обработка отправки формы
       if (form) {
         form.addEventListener('submit', function(e) {
@@ -159,7 +180,7 @@
                       placeholder="••••••••"
                       minlength="6"
                       required>
-                    <span class="input-group-text cursor-pointer"><i class="icon-base ti tabler-eye-off"></i></span>
+                    <span class="input-group-text cursor-pointer" data-toggle-password="#password"><i class="icon-base ti tabler-eye-off"></i></span>
                     @error('password')
                       <div class="invalid-feedback d-block">{{ $message }}</div>
                     @enderror
@@ -199,14 +220,17 @@
               <div class="col-md-6">
                 <div class="mb-3">
                   <label for="password_confirmation" class="form-label">{{ __('Подтверждение пароля') }}</label>
-                  <input
-                    type="password"
-                    id="password_confirmation"
-                    name="password_confirmation"
-                    class="form-control @error('password_confirmation') is-invalid @enderror"
-                    placeholder="••••••••"
-                    minlength="6"
-                    required>
+                  <div class="input-group input-group-merge">
+                    <input
+                      type="password"
+                      id="password_confirmation"
+                      name="password_confirmation"
+                      class="form-control @error('password_confirmation') is-invalid @enderror"
+                      placeholder="••••••••"
+                      minlength="6"
+                      required>
+                    <span class="input-group-text cursor-pointer" data-toggle-password="#password_confirmation"><i class="icon-base ti tabler-eye-off"></i></span>
+                  </div>
                   @error('password_confirmation')
                     <div class="invalid-feedback">{{ $message }}</div>
                   @enderror

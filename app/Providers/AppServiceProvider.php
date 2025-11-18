@@ -53,19 +53,8 @@ class AppServiceProvider extends ServiceProvider
             $companies = collect();
 
             if ($user) {
-                $moderated = $user->moderatedCompanies()
-                    ->orderBy('name')
-                    ->get();
-
-                $accessible = $user->accessibleCompanies()
-                    ->orderBy('name')
-                    ->get();
-
-                $companies = $moderated
-                    ->merge($accessible)
-                    ->unique('id')
-                    ->sortBy('name', SORT_LOCALE_STRING)
-                    ->values();
+                // Используем новый метод getMenuCompanies() который учитывает выбор пользователя
+                $companies = $user->getMenuCompanies();
             }
 
             $view->with('sidebarUserCompanies', $companies);

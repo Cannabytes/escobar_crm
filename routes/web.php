@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\CompanyBankController;
 use App\Http\Controllers\Admin\CompanyBankDetailController;
 use App\Http\Controllers\Admin\CompanyController;
 use App\Http\Controllers\Admin\LedgerController;
+use App\Http\Controllers\Admin\MyCompaniesController;
 use App\Http\Controllers\Admin\PhoneContactController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
@@ -100,6 +101,10 @@ Route::prefix('admin')->name('admin.')->middleware(['ensure.installed', 'auth'])
     // Удаление главного модератора (только для супер-админа)
     Route::delete('companies/{company}/moderator', [CompanyAccessController::class, 'removeModerator'])
         ->name('companies.moderator.remove');
+
+    // Мои компании (настройка меню)
+    Route::get('my-companies', [MyCompaniesController::class, 'index'])->name('my-companies.index');
+    Route::put('my-companies', [MyCompaniesController::class, 'update'])->name('my-companies.update');
 
     // Пользователи
     Route::get('/users', [UserController::class, 'index'])->name('users.index');

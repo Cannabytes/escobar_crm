@@ -91,6 +91,13 @@
       <span class="menu-header-text">{{ __('Мои компании') }}</span>
     </li>
 
+    <li class="menu-item {{ $currentRoute === 'admin.my-companies.index' ? 'active' : '' }}">
+      <a href="{{ route('admin.my-companies.index') }}" class="menu-link">
+        <i class="menu-icon icon-base ti tabler-settings"></i>
+        <div>{{ __('Настройка меню') }}</div>
+      </a>
+    </li>
+
     @forelse($userSidebarCompanies as $sidebarCompany)
       @php
         $isMyCompanyActive = in_array($currentRoute, ['admin.companies.show', 'admin.companies.edit'], true)

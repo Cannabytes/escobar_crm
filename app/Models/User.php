@@ -70,6 +70,13 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
+    // Компании, выбранные пользователем для отображения в меню
+    public function menuCompanies(): BelongsToMany
+    {
+        return $this->belongsToMany(Company::class, 'user_menu_companies')
+            ->withTimestamps();
+    }
+
     // Все компании, доступные пользователю (модерируемые + с доступом)
     public function allAccessibleCompanies()
     {
@@ -277,5 +284,64 @@ class User extends Authenticatable
     public function hasTwoFactorConfirmed(): bool
     {
         return $this->two_factor_confirmed_at !== null;
+    }
+
+    /**
+     * Получить компании для отображения в меню
+     * Возвращает выбранные пользователем компании или все доступные, если ничего не выбрано
+     */
+    public function getMenuCompanies()
+    {
+        $menuCompanyIds = $this->menuCompanies()->pluck('companies.id');
+        
+        // Если есть выбранные компании для меню, возвращаем только их
+        if ($menuCompanyIds->isNotEmpty()) {
+            $allCompanies = $this->allAccessibleCompanies()->get();
+            return $allCompanies->filter(fn ($company) => $menuCompanyIds->contains($company->id))
+                ->sortBy('name', SORT_LOCALE_STRING)
+                ->values();
+        }
+
+        // Если ничего не выбрано, возвращаем все доступные (старое поведение для обратной совместимости)
+        $moderated = $this->moderatedCompanies()
+            ->orderBy('name')
+            ->get();
+
+        $accessible = $this->accessibleCompanies()
+            ->orderBy('name')
+            ->get();
+
+        return $moderated
+            ->merge($accessible)
+            ->unique('id')
+            ->sortBy('name', SORT_LOCALE_STRING)
+            ->values();
+    }
+
+    /**
+     * Обновить список компаний для отображения в меню
+     */
+    public function updateMenuCompanies(array $companyIds): void
+    {
+        // Проверяем, что все компании доступны пользователю
+        $accessibleCompanyIds = $this->allAccessibleCompanies()->pluck('id');
+        $validCompanyIds = collect($companyIds)->filter(fn ($id) => $accessibleCompanyIds->contains($id))->toArray();
+
+        $this->menuCompanies()->sync($validCompanyIds);
+    }
+
+    /**
+     * Проверить, выбрана ли компания для отображения в меню
+     */
+    public function isCompanyInMenu(int $companyId): bool
+    {
+        $menuCompanyIds = $this->menuCompanies()->pluck('companies.id');
+        
+        // Если ничего не выбрано, считаем что все доступные компании в меню (старое поведение)
+        if ($menuCompanyIds->isEmpty()) {
+            return $this->allAccessibleCompanies()->where('id', $companyId)->exists();
+        }
+
+        return $menuCompanyIds->contains($companyId);
     }
 }

@@ -177,6 +177,34 @@
                         </div>
                     </div>
 
+                    <!-- Двухфакторная аутентификация -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bx bx-shield-quarter me-1"></i>
+                                {{ __('twofactor.title') }}
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            @if($user->hasTwoFactorEnabled())
+                                <div class="alert alert-success mb-3">
+                                    <i class="bx bx-check-circle me-2"></i>
+                                    {{ __('twofactor.enabled_message') }}
+                                </div>
+                            @else
+                                <div class="alert alert-info mb-3">
+                                    <i class="bx bx-info-circle me-2"></i>
+                                    {{ __('twofactor.setup_instructions') }}
+                                </div>
+                            @endif
+                            
+                            <a href="{{ route('admin.two-factor.index') }}" class="btn btn-primary">
+                                <i class="bx bx-shield-quarter me-1"></i>
+                                {{ __('twofactor.title') }}
+                            </a>
+                        </div>
+                    </div>
+
                     <!-- Изменение пароля -->
                     <div class="card">
                         <div class="card-header">

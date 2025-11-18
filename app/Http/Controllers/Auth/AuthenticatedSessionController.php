@@ -46,6 +46,20 @@ class AuthenticatedSessionController extends Controller
         }
 
         RateLimiter::clear($throttleKey);
+        
+        $user = Auth::user();
+        
+        // Проверяем, включена ли 2FA
+        if ($user->hasTwoFactorEnabled()) {
+            // Сохраняем ID пользователя и remember в сессии для проверки 2FA
+            $request->session()->put('login.id', $user->id);
+            $request->session()->put('login.remember', $request->boolean('remember'));
+            Auth::logout();
+            $request->session()->regenerate();
+            
+            return redirect()->route('two-factor.login');
+        }
+
         $request->session()->regenerate();
 
         return redirect()->intended(route('admin.dashboard'));

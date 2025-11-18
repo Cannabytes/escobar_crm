@@ -31,6 +31,9 @@ class User extends Authenticatable
         'whatsapp',
         'last_activity_at',
         'avatar',
+        'two_factor_secret',
+        'two_factor_enabled',
+        'two_factor_confirmed_at',
     ];
 
     protected $attributes = [
@@ -48,6 +51,8 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'last_activity_at' => 'datetime',
+            'two_factor_enabled' => 'boolean',
+            'two_factor_confirmed_at' => 'datetime',
         ];
     }
 
@@ -256,5 +261,21 @@ class User extends Authenticatable
         // Генерируем аватар с инициалами через UI Avatars
         $name = urlencode($this->name);
         return "https://ui-avatars.com/api/?name={$name}&color=7F9CF5&background=EBF4FF&size=128";
+    }
+
+    /**
+     * Проверить, включена ли двухфакторная аутентификация
+     */
+    public function hasTwoFactorEnabled(): bool
+    {
+        return $this->two_factor_enabled && $this->two_factor_secret !== null;
+    }
+
+    /**
+     * Проверить, подтверждена ли двухфакторная аутентификация
+     */
+    public function hasTwoFactorConfirmed(): bool
+    {
+        return $this->two_factor_confirmed_at !== null;
     }
 }

@@ -41,6 +41,10 @@ Route::middleware('guest')->group(function () {
 Route::middleware(['guest', 'ensure.installed'])->group(function () {
     Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('login', [AuthenticatedSessionController::class, 'store'])->name('login.store');
+    
+    // Двухфакторная аутентификация при входе
+    Route::get('two-factor/login', [\App\Http\Controllers\Auth\TwoFactorLoginController::class, 'create'])->name('two-factor.login');
+    Route::post('two-factor/login', [\App\Http\Controllers\Auth\TwoFactorLoginController::class, 'store'])->name('two-factor.login.store');
 });
 
 Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
@@ -123,6 +127,12 @@ Route::prefix('admin')->name('admin.')->middleware(['ensure.installed', 'auth'])
     Route::put('/profile/password', [\App\Http\Controllers\Admin\ProfileController::class, 'updatePassword'])->name('profile.password.update');
     Route::post('/profile/avatar', [\App\Http\Controllers\Admin\ProfileController::class, 'uploadAvatar'])->name('profile.avatar.upload');
     Route::delete('/profile/avatar', [\App\Http\Controllers\Admin\ProfileController::class, 'deleteAvatar'])->name('profile.avatar.delete');
+
+    // Двухфакторная аутентификация
+    Route::get('/two-factor', [\App\Http\Controllers\Admin\TwoFactorController::class, 'index'])->name('two-factor.index');
+    Route::get('/two-factor/qr-code', [\App\Http\Controllers\Admin\TwoFactorController::class, 'qrCode'])->name('two-factor.qr-code');
+    Route::post('/two-factor/enable', [\App\Http\Controllers\Admin\TwoFactorController::class, 'enable'])->name('two-factor.enable');
+    Route::post('/two-factor/disable', [\App\Http\Controllers\Admin\TwoFactorController::class, 'disable'])->name('two-factor.disable');
 
     // Роли и разрешения (только для супер админа)
     Route::resource('roles', RoleController::class);

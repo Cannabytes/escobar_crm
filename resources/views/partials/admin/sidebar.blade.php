@@ -33,7 +33,7 @@
           </svg>
         </span>
       </span>
-      <span class="app-brand-text demo menu-text fw-bold ms-3">Escobar Admin</span>
+      <span class="app-brand-text demo menu-text fw-bold ms-3">{{ config('app.admin_sidebar_title') }}</span>
     </a>
 
     <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto d-block d-xl-none">

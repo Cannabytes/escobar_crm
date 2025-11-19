@@ -13,7 +13,8 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', 'xDetails CRM'),
+    'admin_sidebar_title' => env('ADMIN_SIDEBAR_TITLE', 'xDetails CRM'),
 
     /*
     |--------------------------------------------------------------------------
@@ -127,5 +128,6 @@ return [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
+
 
 ];

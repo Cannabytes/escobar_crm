@@ -231,6 +231,11 @@
             confirmed = confirm('{{ __('Удалить реквизит?') }}');
           }
           
+          // Если пользователь отменил действие — просто выходим
+          if (!confirmed) {
+            return;
+          }
+
           // Блокируем кнопку во время запроса
           const originalHTML = buttonElement.innerHTML;
           const originalDisabled = buttonElement.disabled;

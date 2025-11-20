@@ -61,7 +61,12 @@
     <li class="menu-item {{ $currentRoute === 'admin.chat.index' ? 'active' : '' }}">
       <a href="{{ route('admin.chat.index') }}" class="menu-link">
         <i class="menu-icon icon-base ti tabler-message-circle"></i>
-        <div>{{ __('Чат') }}</div>
+        <div class="d-flex align-items-center">
+          {{ __('Чат') }}
+          @if(!empty($hasUnreadPrivateMessages))
+            <span class="ms-2 rounded-circle bg-danger" style="width: 8px; height: 8px; display: inline-block;" aria-label="{{ __('Есть непрочитанные приватные сообщения') }}"></span>
+          @endif
+        </div>
       </a>
     </li>
 

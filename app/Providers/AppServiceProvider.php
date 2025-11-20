@@ -2,12 +2,14 @@
 
 namespace App\Providers;
 
+use App\Models\ChatRoom;
 use App\Services\CurrencyRateService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\DB;
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -51,13 +53,29 @@ class AppServiceProvider extends ServiceProvider
             $user = Auth::user();
 
             $companies = collect();
+            $hasUnreadPrivateMessages = false;
 
             if ($user) {
                 // Используем новый метод getMenuCompanies() который учитывает выбор пользователя
                 $companies = $user->getMenuCompanies();
+
+                $hasUnreadPrivateMessages = DB::table('chat_room_user as cru')
+                    ->join('chat_rooms as cr', 'cru.chat_room_id', '=', 'cr.id')
+                    ->join('chat_messages as cm', 'cm.chat_room_id', '=', 'cr.id')
+                    ->where('cr.type', ChatRoom::TYPE_PRIVATE)
+                    ->where('cru.user_id', $user->id)
+                    ->where('cm.user_id', '!=', $user->id)
+                    ->where(function ($query) {
+                        $query->whereNull('cru.last_read_at')
+                            ->orWhereColumn('cm.created_at', '>', 'cru.last_read_at');
+                    })
+                    ->exists();
             }
 
-            $view->with('sidebarUserCompanies', $companies);
+            $view->with([
+                'sidebarUserCompanies' => $companies,
+                'hasUnreadPrivateMessages' => $hasUnreadPrivateMessages,
+            ]);
         });
     }
 }

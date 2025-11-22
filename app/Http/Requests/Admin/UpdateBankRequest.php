@@ -29,6 +29,7 @@ class UpdateBankRequest extends FormRequest
             'name' => ['required', 'string', 'max:191'],
             'country' => ['nullable', 'string', 'max:100'],
             'bank_code' => ['nullable', 'string', 'max:50'],
+            'status' => ['nullable', 'string', 'in:active,inactive,hold,closed'],
             'notes' => ['nullable', 'string'],
             'login' => ['nullable', 'string', 'max:191'],
             'login_id' => ['nullable', 'string', 'max:191'],

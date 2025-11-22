@@ -67,6 +67,8 @@ Route::prefix('admin')->name('admin.')->middleware(['ensure.installed', 'auth'])
         ->name('companies.bank-accounts.destroy');
 
     // Банки компании (новая структура)
+    Route::get('banks-by-country', [CompanyBankController::class, 'getBanksByCountry'])
+        ->name('banks.by-country');
     Route::post('companies/{company}/banks', [CompanyBankController::class, 'store'])
         ->name('companies.banks.store');
     Route::put('companies/{company}/banks/{bank}', [CompanyBankController::class, 'update'])
@@ -116,6 +118,10 @@ Route::prefix('admin')->name('admin.')->middleware(['ensure.installed', 'auth'])
     // Ledger
     Route::resource('ledger', LedgerController::class)
         ->only(['index', 'store', 'update', 'destroy']);
+
+    // Статистика
+    Route::get('statistics', [\App\Http\Controllers\Admin\StatisticsController::class, 'index'])
+        ->name('statistics.index');
     Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
     Route::post('/users', [UserController::class, 'store'])->name('users.store');
     Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');

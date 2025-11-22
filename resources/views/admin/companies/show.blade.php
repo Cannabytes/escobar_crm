@@ -22,7 +22,40 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       if (typeof $ !== 'undefined' && $.fn.select2) {
-        // Инициализация Select2 для модального окна
+        // Функция для инициализации Select2 в модальном окне
+        function initSelect2InModal(modalId) {
+          $(modalId).on('shown.bs.modal', function() {
+            const $modal = $(this);
+            $modal.find('.select2').each(function() {
+              const $select = $(this);
+              if (!$select.hasClass('select2-hidden-accessible')) {
+                $select.select2({
+                  placeholder: $select.data('placeholder') || '{{ __('Выберите из списка') }}',
+                  dropdownParent: $modal,
+                  width: '100%',
+                  language: {
+                    noResults: function() {
+                      return '{{ __('Результаты не найдены') }}';
+                    }
+                  }
+                });
+              }
+            });
+          });
+          
+          // Очистка Select2 при закрытии модального окна
+          $(modalId).on('hidden.bs.modal', function() {
+            const $modal = $(this);
+            $modal.find('.select2').each(function() {
+              const $select = $(this);
+              if ($select.hasClass('select2-hidden-accessible')) {
+                $select.val('').trigger('change');
+              }
+            });
+          });
+        }
+        
+        // Инициализация Select2 для модального окна добавления доступа
         $('#addAccessModal').on('shown.bs.modal', function() {
           const $select = $('#addAccessModal .select2');
           if (!$select.hasClass('select2-hidden-accessible')) {
@@ -39,7 +72,7 @@
           }
         });
         
-        // Очистка Select2 при закрытии модального окна
+        // Очистка Select2 при закрытии модального окна добавления доступа
         $('#addAccessModal').on('hidden.bs.modal', function() {
           const $select = $('#addAccessModal .select2');
           if ($select.hasClass('select2-hidden-accessible')) {
@@ -47,10 +80,25 @@
           }
         });
         
-        // Инициализация Select2 для других элементов (если есть)
-        $('.select2').not('#addAccessModal .select2').select2({
-          placeholder: '{{ __('Выберите из списка') }}',
-          width: '100%'
+        // Инициализация Select2 для модального окна добавления банка
+        initSelect2InModal('#addBankModal');
+        
+        // Инициализация Select2 для модального окна добавления банковского счета
+        initSelect2InModal('#addBankAccountModal');
+        
+        // Инициализация Select2 для всех модальных окон редактирования банка
+        $('[id^="editBankModal"]').each(function() {
+          initSelect2InModal('#' + $(this).attr('id'));
+        });
+        
+        // Инициализация Select2 для всех модальных окон добавления реквизита
+        $('[id^="addBankDetailModal"]').each(function() {
+          initSelect2InModal('#' + $(this).attr('id'));
+        });
+        
+        // Инициализация Select2 для всех модальных окон редактирования реквизита
+        $('[id^="editBankDetailModal"]').each(function() {
+          initSelect2InModal('#' + $(this).attr('id'));
         });
       }
       
@@ -410,6 +458,65 @@
         });
       });
     });
+
+    // Динамическое обновление списка банков при выборе страны
+    document.addEventListener('DOMContentLoaded', function() {
+      const countrySelect = document.getElementById('bank-country-select');
+      const bankNameSelect = document.getElementById('bank-name-select');
+      
+      if (countrySelect && bankNameSelect) {
+        // Загружаем банки при открытии модального окна
+        $('#addBankModal').on('shown.bs.modal', function() {
+          const selectedCountry = countrySelect.value;
+          if (selectedCountry) {
+            updateBankList(selectedCountry);
+          }
+        });
+        
+        // Обновляем список банков при изменении страны
+        countrySelect.addEventListener('change', function() {
+          const country = this.value;
+          updateBankList(country);
+        });
+        
+        function updateBankList(country) {
+          if (!country) {
+            bankNameSelect.innerHTML = '<option value="">{{ __('Сначала выберите страну') }}</option>';
+            return;
+          }
+          
+          // Получаем список банков для страны через AJAX
+          fetch(`{{ url('/admin/banks-by-country') }}?country=${encodeURIComponent(country)}`, {
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest',
+              'Accept': 'application/json',
+            }
+          })
+          .then(response => response.json())
+          .then(data => {
+            bankNameSelect.innerHTML = '<option value="">{{ __('Выберите банк') }}</option>';
+            
+            if (data.banks && Object.keys(data.banks).length > 0) {
+              for (const [fullName, shortName] of Object.entries(data.banks)) {
+                const option = document.createElement('option');
+                option.value = fullName;
+                option.textContent = fullName;
+                bankNameSelect.appendChild(option);
+              }
+            } else {
+              const option = document.createElement('option');
+              option.value = '';
+              option.textContent = '{{ __('Банки не найдены для этой страны') }}';
+              bankNameSelect.appendChild(option);
+            }
+          })
+          .catch(error => {
+            console.error('Ошибка при загрузке банков:', error);
+            bankNameSelect.innerHTML = '<option value="">{{ __('Ошибка при загрузке банков') }}</option>';
+          });
+        }
+      }
+    });
   </script>
 @endpush
 
@@ -654,6 +761,19 @@
                       @if ($bank->country)
                         <span class="badge bg-label-warning ms-2 fw-bold">{{ $bank->country }}</span>
                       @endif
+                      @php
+                        $statusColors = [
+                          'active' => 'success',
+                          'inactive' => 'secondary',
+                          'hold' => 'warning',
+                          'closed' => 'danger',
+                        ];
+                        $statusColor = $statusColors[$bank->status ?? 'active'] ?? 'secondary';
+                        $statusLabels = \App\Models\Bank::getStatuses();
+                      @endphp
+                      <span class="badge bg-label-{{ $statusColor }} ms-2">
+                        {{ $statusLabels[$bank->status ?? 'active'] ?? __('Active') }}
+                      </span>
                       @if ($bank->details->count())
                         <span class="badge bg-label-info ms-2" id="bank-details-count-{{ $bank->id }}">
                           <i class="icon-base ti tabler-files me-1"></i>{{ $bank->details->count() }}
@@ -873,13 +993,26 @@
                               <div class="row">
                                 <div class="col-md-6 mb-3">
                                   <label class="form-label">{{ __('Страна') }}</label>
-                                  <select class="form-select" name="country">
+                                  <select class="form-select select2" name="country">
                                     <option value="">— {{ __('Не указано') }} —</option>
                                     @foreach (config('countries.list', []) as $code => $name)
                                       <option value="{{ $code }}" {{ old('country', $bank->country) == $code ? 'selected' : '' }}>{{ __($name) }}</option>
                                     @endforeach
                                   </select>
                                 </div>
+                                <div class="col-md-6 mb-3">
+                                  <label class="form-label required">{{ __('Статус') }}</label>
+                                  <select class="form-select select2" name="status" required>
+                                    @foreach (\App\Models\Bank::getStatuses() as $value => $label)
+                                      <option value="{{ $value }}" {{ old('status', $bank->status ?? 'active') == $value ? 'selected' : '' }}>
+                                        {{ $label }}
+                                      </option>
+                                    @endforeach
+                                  </select>
+                                </div>
+                              </div>
+
+                              <div class="row">
                                 <div class="col-md-6 mb-3">
                                   <label class="form-label">{{ __('Код банка') }}</label>
                                   <input type="text" class="form-control" name="bank_code" 
@@ -965,7 +1098,7 @@
                             <div class="modal-body">
                               <div class="mb-3">
                                 <label class="form-label">{{ __('Валюта') }}</label>
-                                <select class="form-select" name="currency">
+                                <select class="form-select select2" name="currency">
                                   <option value="">— {{ __('Не указано') }} —</option>
                                   @foreach (config('currencies.list', []) as $code => $label)
                                     <option value="{{ $code }}">{{ $label }}</option>
@@ -975,7 +1108,7 @@
 
                               <div class="mb-3">
                                 <label class="form-label">{{ __('Статус') }}</label>
-                                <select class="form-select" name="status">
+                                <select class="form-select select2" name="status">
                                   @foreach (BankDetail::getStatuses() as $key => $label)
                                     <option value="{{ $key }}" {{ $key === 'active' ? 'selected' : '' }}>{{ $label }}</option>
                                   @endforeach
@@ -1034,7 +1167,7 @@
                             <div class="modal-body">
                               <div class="mb-3">
                                 <label class="form-label">{{ __('Валюта') }}</label>
-                                <select class="form-select" name="currency">
+                                <select class="form-select select2" name="currency">
                                   <option value="">— {{ __('Не указано') }} —</option>
                                   @foreach (config('currencies.list', []) as $code => $label)
                                     <option value="{{ $code }}" {{ $detail->currency === $code ? 'selected' : '' }}>{{ $label }}</option>
@@ -1044,7 +1177,7 @@
 
                               <div class="mb-3">
                                 <label class="form-label">{{ __('Статус') }}</label>
-                                <select class="form-select" name="status">
+                                <select class="form-select select2" name="status">
                                   @foreach (BankDetail::getStatuses() as $key => $label)
                                     <option value="{{ $key }}" {{ $detail->status === $key ? 'selected' : '' }}>{{ $label }}</option>
                                   @endforeach
@@ -1492,19 +1625,34 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label required">{{ __('Название банка') }}</label>
-            <input type="text" class="form-control" name="name" 
-                   placeholder="напр. Монобанк, ПриватБанк" required>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label required">{{ __('Страна') }}</label>
+              <select class="form-select select2" id="bank-country-select" name="country" required>
+                <option value="">{{ __('Выберите страну') }}</option>
+                @foreach (config('countries.list', []) as $code => $name)
+                  <option value="{{ $code }}" {{ $company->country == $code ? 'selected' : '' }}>
+                    {{ __($name) }}
+                  </option>
+                @endforeach
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label required">{{ __('Название банка') }}</label>
+              <select class="form-select select2" id="bank-name-select" name="name" required>
+                <option value="">{{ __('Сначала выберите страну') }}</option>
+              </select>
+            </div>
           </div>
 
           <div class="row">
             <div class="col-md-6 mb-3">
-              <label class="form-label">{{ __('Страна') }}</label>
-              <select class="form-select" name="country">
-                <option value="">— {{ __('Не указано') }} —</option>
-                @foreach (config('countries.list', []) as $code => $name)
-                  <option value="{{ $code }}">{{ __($name) }}</option>
+              <label class="form-label required">{{ __('Статус') }}</label>
+              <select class="form-select select2" name="status" required>
+                @foreach (\App\Models\Bank::getStatuses() as $value => $label)
+                  <option value="{{ $value }}" {{ $value === 'active' ? 'selected' : '' }}>
+                    {{ $label }}
+                  </option>
                 @endforeach
               </select>
             </div>
@@ -1596,7 +1744,7 @@
             </div>
             <div class="col-md-6 mb-3">
               <label class="form-label required">{{ __('Страна') }}</label>
-              <select class="form-select" name="country" required>
+              <select class="form-select select2" name="country" required>
                 <option value="">{{ __('Выберите страну') }}</option>
                 @foreach (config('countries.list', []) as $code => $name)
                   <option value="{{ $code }}">{{ __($name) }}</option>
@@ -1614,7 +1762,7 @@
           <div class="row">
             <div class="col-md-4 mb-3">
               <label class="form-label required">{{ __('Валюта') }}</label>
-              <select class="form-select" name="currency" required>
+              <select class="form-select select2" name="currency" required>
                 @foreach (config('currencies.list', []) as $code => $label)
                   <option value="{{ $code }}">{{ $label }}</option>
                 @endforeach

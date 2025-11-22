@@ -6,6 +6,7 @@ return [
         'Belarus'     => 'Belarus',
         'Belgium'     => 'Belgium',
         'China'       => 'China',
+        'Egypt'       => 'Egypt',
         'Germany'     => 'Germany',
         'Hong Kong'   => 'Hong Kong',
         'Latvia'      => 'Latvia',

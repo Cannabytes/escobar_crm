@@ -7,16 +7,39 @@ use App\Http\Requests\Admin\StoreBankRequest;
 use App\Http\Requests\Admin\UpdateBankRequest;
 use App\Models\Bank;
 use App\Models\Company;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 class CompanyBankController extends Controller
 {
+    /**
+     * Получить список банков для страны (AJAX)
+     */
+    public function getBanksByCountry(Request $request): JsonResponse
+    {
+        $country = $request->query('country');
+        
+        if (!$country) {
+            return response()->json(['banks' => []]);
+        }
+
+        $banks = Bank::getBanksForCountry($country);
+        
+        return response()->json(['banks' => $banks]);
+    }
+
     /**
      * Добавить новый банк для компании
      */
     public function store(StoreBankRequest $request, Company $company): RedirectResponse
     {
         $validated = $request->validated();
+
+        // Если страна не указана, используем страну компании
+        if (empty($validated['country'])) {
+            $validated['country'] = $company->country;
+        }
 
         $validated['company_id'] = $company->id;
 

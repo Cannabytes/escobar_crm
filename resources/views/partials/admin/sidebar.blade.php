@@ -167,6 +167,18 @@
     </li>
     @endif
 
+    @if(auth()->user()->hasAnyPermission(['companies.view', 'companies.manage']))
+    <li class="menu-header small text-uppercase">
+      <span class="menu-header-text">{{ __('Статистика') }}</span>
+    </li>
+    <li class="menu-item {{ $currentRoute === 'admin.statistics.index' ? 'active' : '' }}">
+      <a href="{{ route('admin.statistics.index') }}" class="menu-link">
+        <i class="menu-icon icon-base ti tabler-chart-bar"></i>
+        <div>{{ __('Статистика') }}</div>
+      </a>
+    </li>
+    @endif
+
     @if(auth()->user()->hasAnyPermission(['logs.view', 'roles.view']) || auth()->user()->isSuperAdmin())
     <li class="menu-header small text-uppercase">
       <span class="menu-header-text">{{ __('Система') }}</span>
